@@ -229,7 +229,7 @@ def compare_consumption_periods(
     period1_str = f"{period1_start.strftime('%Y-%m-%d')} to {period1_end.strftime('%Y-%m-%d')}"
     period2_str = f"{period2_start.strftime('%Y-%m-%d')} to {period2_end.strftime('%Y-%m-%d')}"
 
-    print(f"\nConsumption Comparison:")
+    print("\nConsumption Comparison:")
     print(f"Period 1 ({period1_str}):")
     print(f"  - Total: {total1:.2f} {df1['unit'].iloc[0]}")
     print(f"  - Average: {avg1:.2f} {df1['unit'].iloc[0]}")
@@ -238,16 +238,12 @@ def compare_consumption_periods(
     print(f"  - Total: {total2:.2f} {df2['unit'].iloc[0]}")
     print(f"  - Average: {avg2:.2f} {df2['unit'].iloc[0]}")
 
-    print(f"\nComparison:")
+    print("\nComparison:")
     print(f"  - Absolute difference: {total2 - total1:.2f} {df1['unit'].iloc[0]}")
     print(f"  - Percentage difference: {pct_diff:.2f}%")
 
     # Plot comparison
     plt.figure(figsize=(12, 6))
-
-    # Align the days of the week for better comparison
-    days_of_week1 = [d.weekday() for d in daily1.index]
-    days_of_week2 = [d.weekday() for d in daily2.index]
 
     plt.subplot(2, 1, 1)
     plt.bar(range(len(daily1)), daily1["value"], label=f"Period 1 ({period1_str})")
@@ -316,7 +312,7 @@ def analyze_monthly_trends(
     max_month = df["value"].idxmax().strftime("%B")
     min_month = df["value"].idxmin().strftime("%B")
 
-    print(f"\nYearly Statistics:")
+    print("\nYearly Statistics:")
     print(f"  - Total consumption: {total:.2f} {df['unit'].iloc[0]}")
     print(f"  - Average monthly consumption: {average:.2f} {df['unit'].iloc[0]}")
     print(
@@ -375,7 +371,7 @@ def detect_consumption_anomalies(
     # Detect anomalies
     anomalies = df[abs(df["value"] - mean) > threshold].copy()
 
-    print(f"\nAnomaly Detection:")
+    print("\nAnomaly Detection:")
     print(f"  - Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
     print(f"  - Average consumption: {mean:.2f} {df['unit'].iloc[0]}")
     print(f"  - Standard deviation: {std:.2f} {df['unit'].iloc[0]}")
@@ -422,7 +418,7 @@ def detect_consumption_anomalies(
             label=f"Lower Threshold ({mean - threshold:.2f})",
         )
 
-        plt.title(f"Electricity Consumption with Anomalies")
+        plt.title("Electricity Consumption with Anomalies")
         plt.xlabel("Time")
         plt.ylabel(f"Consumption ({df['unit'].iloc[0]})")
         plt.legend()
@@ -499,7 +495,7 @@ def main():
             previous_week_end = current_week_start
             previous_week_start = previous_week_end - timedelta(days=7)
 
-            print(f"\nExample 2: Comparing consumption between two weeks")
+            print("\nExample 2: Comparing consumption between two weeks")
             compare_consumption_periods(
                 client,
                 metering_point,
@@ -529,7 +525,7 @@ def main():
             end_date = datetime.now()
             start_date = end_date - timedelta(days=30)
 
-            print(f"\nExample 4: Detecting consumption anomalies for the last 30 days")
+            print("\nExample 4: Detecting consumption anomalies for the last 30 days")
             detect_consumption_anomalies(
                 client,
                 metering_point,
