@@ -8,33 +8,29 @@ energy consumption and production data for electricity and gas.
 # Import the client class
 from .client import LenedaClient
 
-# Import the OBIS code constants
-from .obis_codes import (
-    ElectricityConsumption,
-    ElectricityProduction,
-    GasConsumption
-)
-
 # Import the data models
 from .models import (
-    MeteringValue,
-    MeteringData,
+    AggregatedMeteringData,
     AggregatedMeteringValue,
-    AggregatedMeteringData
+    MeteringData,
+    MeteringValue,
 )
+
+# Import the OBIS code constants
+from .obis_codes import ElectricityConsumption, ElectricityProduction, GasConsumption
 
 # Import the version
 from .version import __version__
 
 # Define what's available when using "from leneda import *"
 __all__ = [
-    'LenedaClient',
-    'ElectricityConsumption',
-    'ElectricityProduction',
-    'GasConsumption',
-    'MeteringValue',
-    'MeteringData',
-    'AggregatedMeteringValue',
-    'AggregatedMeteringData',
-    '__version__'
+    "LenedaClient",
+    "ElectricityConsumption",
+    "ElectricityProduction",
+    "GasConsumption",
+    "MeteringValue",
+    "MeteringData",
+    "AggregatedMeteringValue",
+    "AggregatedMeteringData",
+    "__version__",
 ]

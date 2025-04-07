@@ -2,28 +2,35 @@
 Tests for the Leneda API client.
 """
 
-import unittest
-from unittest.mock import patch, MagicMock
 import json
 import os
 import sys
+import unittest
+from unittest.mock import MagicMock, patch
+
 import requests
 
 # Add the src directory to the path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.leneda import LenedaClient
-from src.leneda.models import MeteringData, AggregatedMeteringData, MeteringValue, AggregatedMeteringValue
+from src.leneda.models import (
+    AggregatedMeteringData,
+    AggregatedMeteringValue,
+    MeteringData,
+    MeteringValue,
+)
+
 
 class TestLenedaClient(unittest.TestCase):
     """Test cases for the LenedaClient class."""
-    
+
     def setUp(self):
         """Set up test fixtures."""
         self.api_key = "test_api_key"
         self.energy_id = "test_energy_id"
         self.client = LenedaClient(self.api_key, self.energy_id)
-        
+
         # Sample response data
         self.sample_metering_data = {
             "meteringPointCode": "LU-METERING_POINT1",
@@ -36,18 +43,18 @@ class TestLenedaClient(unittest.TestCase):
                     "startedAt": "2023-01-01T00:00:00Z",
                     "type": "Measured",
                     "version": 1,
-                    "calculated": False
+                    "calculated": False,
                 },
                 {
                     "value": 2.345,
                     "startedAt": "2023-01-01T00:15:00Z",
                     "type": "Measured",
                     "version": 1,
-                    "calculated": False
-                }
-            ]
+                    "calculated": False,
+                },
+            ],
         }
-        
+
         self.sample_aggregated_data = {
             "unit": "kWh",
             "aggregatedTimeSeries": [
@@ -55,18 +62,18 @@ class TestLenedaClient(unittest.TestCase):
                     "value": 10.123,
                     "startedAt": "2023-01-01T00:00:00Z",
                     "endedAt": "2023-01-02T00:00:00Z",
-                    "calculated": False
+                    "calculated": False,
                 },
                 {
                     "value": 12.345,
                     "startedAt": "2023-01-02T00:00:00Z",
                     "endedAt": "2023-01-03T00:00:00Z",
-                    "calculated": False
-                }
-            ]
+                    "calculated": False,
+                },
+            ],
         }
-    
-    @patch('requests.request')
+
+    @patch("requests.request")
     def test_get_time_series(self, mock_request):
         """Test getting time series data."""
         # Set up the mock response
@@ -75,22 +82,22 @@ class TestLenedaClient(unittest.TestCase):
         mock_response.json.return_value = self.sample_metering_data
         mock_response.content = json.dumps(self.sample_metering_data).encode()
         mock_request.return_value = mock_response
-        
+
         # Call the method
         result = self.client.get_time_series(
             "LU-METERING_POINT1",
             "1.1.1.8.0.255",
             "2023-01-01T00:00:00Z",
-            "2023-01-02T00:00:00Z"
+            "2023-01-02T00:00:00Z",
         )
-        
+
         # Check the result
         self.assertIsInstance(result, MeteringData)
         self.assertEqual(result.metering_point_code, "LU-METERING_POINT1")
         self.assertEqual(result.obis_code, "1.1.1.8.0.255")
         self.assertEqual(result.unit, "kWh")
         self.assertEqual(len(result.items), 2)
-        
+
         # Check the first item
         self.assertIsInstance(result.items[0], MeteringValue)
         self.assertEqual(result.items[0].value, 1.234)
@@ -98,7 +105,7 @@ class TestLenedaClient(unittest.TestCase):
         self.assertEqual(result.items[0].type, "Measured")
         self.assertEqual(result.items[0].version, 1)
         self.assertEqual(result.items[0].calculated, False)
-        
+
         # Check that the request was made correctly
         mock_request.assert_called_once_with(
             method="GET",
@@ -106,17 +113,17 @@ class TestLenedaClient(unittest.TestCase):
             headers={
                 "X-API-KEY": "test_api_key",
                 "X-ENERGY-ID": "test_energy_id",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
             params={
                 "obisCode": "1.1.1.8.0.255",
                 "startDateTime": "2023-01-01T00:00:00Z",
-                "endDateTime": "2023-01-02T00:00:00Z"
+                "endDateTime": "2023-01-02T00:00:00Z",
             },
-            json=None
+            json=None,
         )
-    
-    @patch('requests.request')
+
+    @patch("requests.request")
     def test_get_aggregated_time_series(self, mock_request):
         """Test getting aggregated time series data."""
         # Set up the mock response
@@ -125,7 +132,7 @@ class TestLenedaClient(unittest.TestCase):
         mock_response.json.return_value = self.sample_aggregated_data
         mock_response.content = json.dumps(self.sample_aggregated_data).encode()
         mock_request.return_value = mock_response
-        
+
         # Call the method
         result = self.client.get_aggregated_time_series(
             "LU-METERING_POINT1",
@@ -133,21 +140,27 @@ class TestLenedaClient(unittest.TestCase):
             "2023-01-01",
             "2023-01-31",
             "Day",
-            "Accumulation"
+            "Accumulation",
         )
-        
+
         # Check the result
         self.assertIsInstance(result, AggregatedMeteringData)
         self.assertEqual(result.unit, "kWh")
         self.assertEqual(len(result.aggregated_time_series), 2)
-        
+
         # Check the first item
         self.assertIsInstance(result.aggregated_time_series[0], AggregatedMeteringValue)
         self.assertEqual(result.aggregated_time_series[0].value, 10.123)
-        self.assertEqual(result.aggregated_time_series[0].started_at.isoformat(), "2023-01-01T00:00:00+00:00")
-        self.assertEqual(result.aggregated_time_series[0].ended_at.isoformat(), "2023-01-02T00:00:00+00:00")
+        self.assertEqual(
+            result.aggregated_time_series[0].started_at.isoformat(),
+            "2023-01-01T00:00:00+00:00",
+        )
+        self.assertEqual(
+            result.aggregated_time_series[0].ended_at.isoformat(),
+            "2023-01-02T00:00:00+00:00",
+        )
         self.assertEqual(result.aggregated_time_series[0].calculated, False)
-        
+
         # Check that the request was made correctly
         mock_request.assert_called_once_with(
             method="GET",
@@ -155,19 +168,19 @@ class TestLenedaClient(unittest.TestCase):
             headers={
                 "X-API-KEY": "test_api_key",
                 "X-ENERGY-ID": "test_energy_id",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
             params={
                 "obisCode": "1.1.1.8.0.255",
                 "startDate": "2023-01-01",
                 "endDate": "2023-01-31",
                 "aggregationLevel": "Day",
-                "transformationMode": "Accumulation"
+                "transformationMode": "Accumulation",
             },
-            json=None
+            json=None,
         )
-    
-    @patch('requests.request')
+
+    @patch("requests.request")
     def test_request_metering_data_access(self, mock_request):
         """Test requesting metering data access."""
         # Set up the mock response
@@ -176,10 +189,10 @@ class TestLenedaClient(unittest.TestCase):
         mock_response.json.return_value = dict()
         mock_response.content = "{}"
         mock_request.return_value = mock_response
-        
+
         # Call the method
         self.client.request_metering_data_access("LU-METERING_POINT1")
-        
+
         # Check that the request was made correctly
         mock_request.assert_called_once_with(
             method="POST",
@@ -187,26 +200,27 @@ class TestLenedaClient(unittest.TestCase):
             headers={
                 "X-API-KEY": "test_api_key",
                 "X-ENERGY-ID": "test_energy_id",
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
             },
             params=None,
-            json={"meteringPointCode": "LU-METERING_POINT1"}
+            json={"meteringPointCode": "LU-METERING_POINT1"},
         )
-    
-    @patch('requests.request')
+
+    @patch("requests.request")
     def test_error_handling(self, mock_request):
         """Test error handling."""
         # Set up the mock response to raise an exception
         mock_request.side_effect = requests.exceptions.HTTPError("404 Client Error")
-        
+
         # Call the method and check that it raises an exception
         with self.assertRaises(requests.exceptions.HTTPError):
             self.client.get_time_series(
                 "LU-METERING_POINT1",
                 "1.1.1.8.0.255",
                 "2023-01-01T00:00:00Z",
-                "2023-01-02T00:00:00Z"
+                "2023-01-02T00:00:00Z",
             )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()
