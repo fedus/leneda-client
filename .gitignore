@@ -121,3 +121,5 @@ dmypy.json
 
 # Project specific
 consumption_vs_production.png
+
+.DS_Store
