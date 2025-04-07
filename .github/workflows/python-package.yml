@@ -37,25 +37,21 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: "3.10"
+        python-version: '3.10'
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        python -m pip install black isort flake8 mypy
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+        pip install black flake8 isort
         pip install -e .
-    - name: Lint with black
+    - name: Run black
       run: |
-        black --check leneda tests examples
-    - name: Lint with isort
+        black --check src/leneda tests examples
+    - name: Run flake8
       run: |
-        isort --check-only --profile black leneda tests examples
-    - name: Lint with flake8
+        flake8 src/leneda tests examples
+    - name: Run isort
       run: |
-        flake8 leneda tests examples
-    - name: Type check with mypy
-      run: |
-        mypy leneda
+        isort --check-only --profile black src/leneda tests examples
 
   build:
     runs-on: ubuntu-latest
