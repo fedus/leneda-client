@@ -114,7 +114,7 @@ class LenedaClient:
             logger.error(f"Response text: {response.text}")
             raise
 
-    def get_time_series(
+    def get_metering_data(
         self,
         metering_point_code: str,
         obis_code: str,
@@ -155,7 +155,7 @@ class LenedaClient:
             response_data, metering_point_code=metering_point_code, obis_code=obis_code
         )
 
-    def get_aggregated_time_series(
+    def get_aggregated_metering_data(
         self,
         metering_point_code: str,
         obis_code: str,

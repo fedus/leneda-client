@@ -191,7 +191,7 @@ def compare_consumption_periods(
 ) -> None:
     """Compare consumption data between two time periods."""
     # Get data for period 1
-    period1_data = client.get_time_series(
+    period1_data = client.get_metering_data(
         metering_point_code=metering_point,
         obis_code=ElectricityConsumption.ACTIVE,
         start_date_time=period1_start,
@@ -199,7 +199,7 @@ def compare_consumption_periods(
     )
 
     # Get data for period 2
-    period2_data = client.get_time_series(
+    period2_data = client.get_metering_data(
         metering_point_code=metering_point,
         obis_code=ElectricityConsumption.ACTIVE,
         start_date_time=period2_start,
@@ -288,7 +288,7 @@ def analyze_monthly_trends(
     start_date = datetime(year, 1, 1)
     end_date = datetime(year, 12, 31)
 
-    monthly_data = client.get_aggregated_time_series(
+    monthly_data = client.get_aggregated_metering_data(
         metering_point_code=metering_point,
         obis_code=ElectricityConsumption.ACTIVE,
         start_date=start_date,
@@ -353,7 +353,7 @@ def detect_consumption_anomalies(
 ) -> None:
     """Detect anomalies in consumption data based on percentage deviation from the mean."""
     # Get hourly consumption data
-    consumption_data = client.get_time_series(
+    consumption_data = client.get_metering_data(
         metering_point_code=metering_point,
         obis_code=ElectricityConsumption.ACTIVE,
         start_date_time=start_date,
@@ -471,7 +471,7 @@ def main():
             print(
                 f"\nExample 1: Visualizing hourly electricity consumption for the last {days} days"
             )
-            consumption_data = client.get_time_series(
+            consumption_data = client.get_metering_data(
                 metering_point_code=metering_point,
                 obis_code=ElectricityConsumption.ACTIVE,
                 start_date_time=start_date,

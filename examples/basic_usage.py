@@ -105,7 +105,7 @@ def main():
         start_date = end_date - timedelta(days=days)
 
         print(f"\nExample 1: Getting hourly electricity consumption data for the last {days} days")
-        consumption_data = client.get_time_series(
+        consumption_data = client.get_metering_data(
             metering_point_code=metering_point,
             obis_code=ElectricityConsumption.ACTIVE,
             start_date_time=start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -134,7 +134,7 @@ def main():
         last_day = datetime(today.year, 12, 31)
 
         print(f"\nExample 2: Getting monthly aggregated electricity consumption for {today.year}")
-        monthly_consumption = client.get_aggregated_time_series(
+        monthly_consumption = client.get_aggregated_metering_data(
             metering_point_code=metering_point,
             obis_code=ElectricityConsumption.ACTIVE,
             start_date=first_day.strftime("%Y-%m-%d"),

@@ -84,7 +84,7 @@ class TestLenedaClient(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.client.get_time_series(
+        result = self.client.get_metering_data(
             "LU-METERING_POINT1",
             "1.1.1.8.0.255",
             "2023-01-01T00:00:00Z",
@@ -134,7 +134,7 @@ class TestLenedaClient(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.client.get_aggregated_time_series(
+        result = self.client.get_aggregated_metering_data(
             "LU-METERING_POINT1",
             "1.1.1.8.0.255",
             "2023-01-01",
@@ -214,7 +214,7 @@ class TestLenedaClient(unittest.TestCase):
 
         # Call the method and check that it raises an exception
         with self.assertRaises(requests.exceptions.HTTPError):
-            self.client.get_time_series(
+            self.client.get_metering_data(
                 "LU-METERING_POINT1",
                 "1.1.1.8.0.255",
                 "2023-01-01T00:00:00Z",
