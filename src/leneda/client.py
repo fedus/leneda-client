@@ -172,8 +172,8 @@ class LenedaClient:
             obis_code: The OBIS code
             start_date: Start date (ISO format string or datetime object)
             end_date: End date (ISO format string or datetime object)
-            aggregation_level: Aggregation level (Day, Week, Month, Quarter, Year)
-            transformation_mode: Transformation mode (Accumulation, Average, Maximum, Minimum)
+            aggregation_level: Aggregation level (Hour, Day, Week, Month, Infinite)
+            transformation_mode: Transformation mode (Accumulation)
 
         Returns:
             AggregatedMeteringData object containing the aggregated time series data
