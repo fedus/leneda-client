@@ -199,11 +199,7 @@ class LenedaClient:
 
         # Parse the response into an AggregatedMeteringData object
         return AggregatedMeteringData.from_dict(
-            response_data,
-            metering_point_code=metering_point_code,
-            obis_code=obis_code,
-            aggregation_level=aggregation_level,
-            transformation_mode=transformation_mode,
+            response_data
         )
 
     def request_metering_data_access(self, metering_point_code: str) -> Dict[str, Any]:

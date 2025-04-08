@@ -184,10 +184,6 @@ class AggregatedMeteringData:
     def from_dict(
         cls,
         data: Dict[str, Any],
-        metering_point_code: str = "",
-        obis_code: str = "",
-        aggregation_level: str = "",
-        transformation_mode: str = "",
     ) -> "AggregatedMeteringData":
         """Create an AggregatedMeteringData from a dictionary."""
         try:
