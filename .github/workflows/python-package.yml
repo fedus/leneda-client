@@ -89,7 +89,7 @@ jobs:
     # Required for OIDC authentication with PyPI
     permissions:
       id-token: write  # Required for OIDC authentication
-      contents: read   # Required to checkout the repository
+      contents: write  # Required for creating GitHub releases
     
     steps:
     - name: Download built package
