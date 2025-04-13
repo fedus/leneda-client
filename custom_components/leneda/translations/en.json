@@ -1,0 +1,66 @@
+{
+    "config": {
+        "step": {
+            "user": {
+                "title": "Leneda Energy Configuration",
+                "description": "How would you like to add your Leneda Energy configuration?",
+                "menu_options": {
+                    "new_credentials": "Add with new energy ID",
+                    "select_existing": "Add using existing energy ID"
+                }
+            },
+            "select_existing": {
+                "title": "Select Existing Configuration",
+                "description": "Choose an existing Leneda Energy configuration to add metering points to.",
+                "data": {
+                    "existing_energy_id": "Configuration"
+                }
+            },
+            "new_credentials": {
+                "title": "Enter New Credentials",
+                "description": "Enter your Leneda Energy API credentials.",
+                "data": {
+                    "api_token": "API Token",
+                    "energy_id": "Energy ID"
+                }
+            },
+            "metering_points": {
+                "title": "Enter Metering Points",
+                "description": "Enter your metering point IDs.",
+                "data": {
+                    "metering_points": "Metering Points"
+                },
+                "description_placeholders": {
+                    "metering_points_help": "Enter your metering point IDs separated by commas (e.g., MP001,MP002)"
+                }
+            }
+        },
+        "error": {
+            "invalid_metering_points": "No valid metering points provided",
+            "existing_config_not_found": "No existing configuration found with the provided Energy ID",
+            "unknown": "Unexpected error occurred"
+        },
+        "abort": {
+            "already_configured": "Device is already configured",
+            "updated_existing": "Configuration updated with new metering points"
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Leneda Energy Options",
+                "description": "Update your metering points configuration.",
+                "data": {
+                    "metering_points": "Metering Points"
+                },
+                "description_placeholders": {
+                    "metering_points_help": "Enter your metering point IDs separated by commas (e.g., MP001,MP002)"
+                }
+            }
+        },
+        "error": {
+            "invalid_metering_points": "No valid metering points provided",
+            "unknown": "Unexpected error occurred"
+        }
+    }
+} 

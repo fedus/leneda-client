@@ -1,0 +1,12 @@
+{
+    "domain": "leneda",
+    "name": "Leneda Energy",
+    "documentation": "https://github.com/fedus/leneda-ha",
+    "config_flow": true,
+    "dependencies": [],
+    "codeowners": ["@fedus"],
+    "requirements": ["leneda-client>=0.1.1"],
+    "version": "1.0.0",
+    "iot_class": "cloud_polling",
+    "issue_tracker": "https://github.com/fedus/leneda-ha/issues"
+} 
