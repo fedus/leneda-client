@@ -45,7 +45,6 @@ def parse_arguments():
     # Other parameters
     parser.add_argument(
         "--metering-point",
-        default="LU-METERING_POINT1",
         help="Metering point code (default: LU-METERING_POINT1)",
     )
     parser.add_argument(

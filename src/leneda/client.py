@@ -153,7 +153,7 @@ class LenedaClient:
 
         # Parse the response into a MeteringData object
         return MeteringData.from_dict(
-            response_data, metering_point_code=metering_point_code, obis_code=obis_code
+            response_data
         )
 
     def get_aggregated_metering_data(

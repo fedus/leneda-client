@@ -76,16 +76,16 @@ class MeteringData:
 
     @classmethod
     def from_dict(
-        cls, data: Dict[str, Any], metering_point_code: str = "", obis_code: ObisCode = None
+        cls, data: Dict[str, Any]
     ) -> "MeteringData":
         """Create a MeteringData from a dictionary."""
         try:
             # Log the raw data for debugging
             logger.debug(f"Creating MeteringData from: {data}")
 
-            # Use values from the response, falling back to provided values if not in response
-            metering_point_code_value = data.get("meteringPointCode", metering_point_code)
-            obis_code_value = data.get("obisCode", obis_code)
+            # Use values from the response
+            metering_point_code_value = data["meteringPointCode"]
+            obis_code_value = data["obisCode"]
 
             # Extract items safely
             items_data = data.get("items", [])
@@ -106,6 +106,10 @@ class MeteringData:
                 unit=data.get("unit", ""),
                 items=items,
             )
+        except KeyError as e:
+            logger.error(f"Missing key in API response: {e}")
+            logger.debug(f"API response data: {data}")
+            raise
         except Exception as e:
             logger.error(f"Error creating MeteringData: {e}")
             logger.debug(f"API response data: {data}")
@@ -207,7 +211,11 @@ class AggregatedMeteringData:
                     logger.warning(f"Skipping invalid aggregated item: {e}")
                     logger.debug(f"Invalid item data: {item_data}")
 
-            return cls(unit=data.get("unit", ""), aggregated_time_series=time_series)
+            return cls(unit=data["unit"], aggregated_time_series=time_series)
+        except KeyError as e:
+            logger.error(f"Missing key in API response: {e}")
+            logger.debug(f"API response data: {data}")
+            raise
         except Exception as e:
             logger.error(f"Error creating AggregatedMeteringData: {e}")
             logger.debug(f"API response data: {data}")
