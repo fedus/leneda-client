@@ -227,9 +227,7 @@ class LenedaClient:
             "from": from_energy_id,
             "fromName": from_name,
             "meteringPointCodes": metering_point_codes,
-            "obisCodes": [
-                code.value for code in obis_codes
-            ],  # Use enum values for API request
+            "obisCodes": [code.value for code in obis_codes],  # Use enum values for API request
         }
 
         # Make the request
