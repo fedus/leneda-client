@@ -12,7 +12,8 @@ from typing import Any, Dict, List, Union
 
 import requests
 
-from .models import AggregatedMeteringData, MeteringData
+from .models import AggregatedMeteringData, MeteringData, ObisCode
+from .obis_codes import ElectricityConsumption, ElectricityProduction, GasConsumption
 
 # Set up logging
 logger = logging.getLogger("leneda.client")
@@ -117,7 +118,7 @@ class LenedaClient:
     def get_metering_data(
         self,
         metering_point_code: str,
-        obis_code: str,
+        obis_code: ObisCode,
         start_date_time: Union[str, datetime],
         end_date_time: Union[str, datetime],
     ) -> MeteringData:
@@ -126,7 +127,7 @@ class LenedaClient:
 
         Args:
             metering_point_code: The metering point code
-            obis_code: The OBIS code
+            obis_code: The OBIS code (from ElectricityConsumption, ElectricityProduction, or GasConsumption)
             start_date_time: Start date and time (ISO format string or datetime object)
             end_date_time: End date and time (ISO format string or datetime object)
 
@@ -142,7 +143,7 @@ class LenedaClient:
         # Set up the endpoint and parameters
         endpoint = f"metering-points/{metering_point_code}/time-series"
         params = {
-            "obisCode": obis_code,
+            "obisCode": str(obis_code),  # Convert enum to string for API request
             "startDateTime": start_date_time,
             "endDateTime": end_date_time,
         }
@@ -158,7 +159,7 @@ class LenedaClient:
     def get_aggregated_metering_data(
         self,
         metering_point_code: str,
-        obis_code: str,
+        obis_code: ObisCode,
         start_date: Union[str, datetime],
         end_date: Union[str, datetime],
         aggregation_level: str = "Day",
@@ -169,7 +170,7 @@ class LenedaClient:
 
         Args:
             metering_point_code: The metering point code
-            obis_code: The OBIS code
+            obis_code: The OBIS code (from ElectricityConsumption, ElectricityProduction, or GasConsumption)
             start_date: Start date (ISO format string or datetime object)
             end_date: End date (ISO format string or datetime object)
             aggregation_level: Aggregation level (Hour, Day, Week, Month, Infinite)
@@ -187,7 +188,7 @@ class LenedaClient:
         # Set up the endpoint and parameters
         endpoint = f"metering-points/{metering_point_code}/time-series/aggregated"
         params = {
-            "obisCode": obis_code,
+            "obisCode": str(obis_code),  # Convert enum to string for API request
             "startDate": start_date,
             "endDate": end_date,
             "aggregationLevel": aggregation_level,
@@ -200,7 +201,13 @@ class LenedaClient:
         # Parse the response into an AggregatedMeteringData object
         return AggregatedMeteringData.from_dict(response_data)
 
-    def request_metering_data_access(self, fromEnergyId: str, fromName: str, meteringPointCodes: List[str], obisPointCodes: List[str]) -> Dict[str, Any]:
+    def request_metering_data_access(
+        self,
+        fromEnergyId: str,
+        fromName: str,
+        meteringPointCodes: List[str],
+        obisPointCodes: List[ObisCode],
+    ) -> Dict[str, Any]:
         """
         Request access to metering data for a specific metering point.
 
@@ -208,7 +215,7 @@ class LenedaClient:
             fromEnergyId: The energy ID of the requester
             fromName: The name of the requester
             meteringPointCodes: The metering point codes to access
-            obisPointCodes: The OBIS point codes to access
+            obisPointCodes: The OBIS point codes to access (from ElectricityConsumption, ElectricityProduction, or GasConsumption)
 
         Returns:
             Response data from the API
@@ -219,7 +226,7 @@ class LenedaClient:
             "from": fromEnergyId,
             "fromName": fromName,
             "meteringPointCodes": meteringPointCodes,
-            "obisPointCodes": obisPointCodes
+            "obisPointCodes": [str(code) for code in obisPointCodes],  # Convert enums to strings for API request
         }
 
         # Make the request

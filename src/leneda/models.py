@@ -8,12 +8,17 @@ making it easier to work with the data in a type-safe manner.
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Union
 
 from dateutil import parser
 
+from .obis_codes import ElectricityConsumption, ElectricityProduction, GasConsumption
+
 # Set up logging
 logger = logging.getLogger("leneda.models")
+
+# Type alias for OBIS codes
+ObisCode = Union[ElectricityConsumption, ElectricityProduction, GasConsumption]
 
 
 @dataclass
@@ -64,14 +69,14 @@ class MeteringData:
     """Metering data for a specific metering point and OBIS code."""
 
     metering_point_code: str
-    obis_code: str
+    obis_code: ObisCode
     interval_length: str
     unit: str
     items: List[MeteringValue] = field(default_factory=list)
 
     @classmethod
     def from_dict(
-        cls, data: Dict[str, Any], metering_point_code: str = "", obis_code: str = ""
+        cls, data: Dict[str, Any], metering_point_code: str = "", obis_code: ObisCode = None
     ) -> "MeteringData":
         """Create a MeteringData from a dictionary."""
         try:
