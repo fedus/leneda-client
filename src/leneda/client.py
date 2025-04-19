@@ -207,7 +207,7 @@ class LenedaClient:
         from_energy_id: str,
         from_name: str,
         metering_point_codes: List[str],
-        obis_point_codes: List[ObisCode],
+        obis_codes: List[ObisCode],
     ) -> Dict[str, Any]:
         """
         Request access to metering data for a specific metering point.
@@ -227,8 +227,8 @@ class LenedaClient:
             "from": from_energy_id,
             "fromName": from_name,
             "meteringPointCodes": metering_point_codes,
-            "obisPointCodes": [
-                code.value for code in obis_point_codes
+            "obisCodes": [
+                code.value for code in obis_codes
             ],  # Use enum values for API request
         }
 

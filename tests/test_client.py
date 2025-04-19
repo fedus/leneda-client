@@ -195,7 +195,7 @@ class TestLenedaClient(unittest.TestCase):
             from_energy_id="test_energy_id",
             from_name="Test User",
             metering_point_codes=["LU-METERING_POINT1"],
-            obis_point_codes=[ObisCode.ELEC_CONSUMPTION_ACTIVE],
+            obis_codes=[ObisCode.ELEC_CONSUMPTION_ACTIVE],
         )
 
         # Check the result
@@ -216,7 +216,7 @@ class TestLenedaClient(unittest.TestCase):
                 "from": "test_energy_id",
                 "fromName": "Test User",
                 "meteringPointCodes": ["LU-METERING_POINT1"],
-                "obisPointCodes": [ObisCode.ELEC_CONSUMPTION_ACTIVE.value],
+                "obisCodes": [ObisCode.ELEC_CONSUMPTION_ACTIVE.value],
             },
         )
 
