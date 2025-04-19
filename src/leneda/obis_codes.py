@@ -20,139 +20,136 @@ class ObisCodeInfo:
     description: str
 
 
-class ElectricityConsumption(str, Enum):
-    """OBIS codes for electricity consumption."""
+class ObisCode(str, Enum):
+    """OBIS codes for all energy types."""
 
-    ACTIVE = "1-1:1.29.0"  # Measured active consumption (kW)
-    REACTIVE = "1-1:3.29.0"  # Measured reactive consumption (kVAR)
+    # Electricity Consumption
+    ELEC_CONSUMPTION_ACTIVE = "1-1:1.29.0"  # Measured active consumption (kW)
+    ELEC_CONSUMPTION_REACTIVE = "1-1:3.29.0"  # Measured reactive consumption (kVAR)
 
     # Consumption covered by production sharing groups
-    COVERED_LAYER1 = "1-65:1.29.1"  # Layer 1 sharing Group (AIR)
-    COVERED_LAYER2 = "1-65:1.29.3"  # Layer 2 sharing Group (ACR/ACF/AC1)
-    COVERED_LAYER3 = "1-65:1.29.2"  # Layer 3 sharing Group (CEL)
-    COVERED_LAYER4 = "1-65:1.29.4"  # Layer 4 sharing Group (APS/CER/CEN)
-    REMAINING = "1-65:1.29.9"  # Remaining consumption after sharing invoiced by supplier
+    ELEC_CONSUMPTION_COVERED_LAYER1 = "1-65:1.29.1"  # Layer 1 sharing Group (AIR)
+    ELEC_CONSUMPTION_COVERED_LAYER2 = "1-65:1.29.3"  # Layer 2 sharing Group (ACR/ACF/AC1)
+    ELEC_CONSUMPTION_COVERED_LAYER3 = "1-65:1.29.2"  # Layer 3 sharing Group (CEL)
+    ELEC_CONSUMPTION_COVERED_LAYER4 = "1-65:1.29.4"  # Layer 4 sharing Group (APS/CER/CEN)
+    ELEC_CONSUMPTION_REMAINING = (
+        "1-65:1.29.9"  # Remaining consumption after sharing invoiced by supplier
+    )
 
-
-class ElectricityProduction(str, Enum):
-    """OBIS codes for electricity production."""
-
-    ACTIVE = "1-1:2.29.0"  # Measured active production (kW)
-    REACTIVE = "1-1:4.29.0"  # Measured reactive production (kVAR)
+    # Electricity Production
+    ELEC_PRODUCTION_ACTIVE = "1-1:2.29.0"  # Measured active production (kW)
+    ELEC_PRODUCTION_REACTIVE = "1-1:4.29.0"  # Measured reactive production (kVAR)
 
     # Production shared within sharing groups
-    SHARED_LAYER1 = "1-65:2.29.1"  # Layer 1 sharing Group (AIR)
-    SHARED_LAYER2 = "1-65:2.29.3"  # Layer 2 sharing Group (ACR/ACF/AC1)
-    SHARED_LAYER3 = "1-65:2.29.2"  # Layer 3 sharing Group (CEL)
-    SHARED_LAYER4 = "1-65:2.29.4"  # Layer 4 sharing Group (APS/CER/CEN)
-    REMAINING = "1-65:2.29.9"  # Remaining production after sharing sold to market
+    ELEC_PRODUCTION_SHARED_LAYER1 = "1-65:2.29.1"  # Layer 1 sharing Group (AIR)
+    ELEC_PRODUCTION_SHARED_LAYER2 = "1-65:2.29.3"  # Layer 2 sharing Group (ACR/ACF/AC1)
+    ELEC_PRODUCTION_SHARED_LAYER3 = "1-65:2.29.2"  # Layer 3 sharing Group (CEL)
+    ELEC_PRODUCTION_SHARED_LAYER4 = "1-65:2.29.4"  # Layer 4 sharing Group (APS/CER/CEN)
+    ELEC_PRODUCTION_REMAINING = "1-65:2.29.9"  # Remaining production after sharing sold to market
 
-
-class GasConsumption(str, Enum):
-    """OBIS codes for gas consumption."""
-
-    VOLUME = "7-1:99.23.15"  # Measured consumed volume (m³)
-    STANDARD_VOLUME = "7-1:99.23.17"  # Measured consumed standard volume (Nm³)
-    ENERGY = "7-20:99.33.17"  # Measured consumed energy (kWh)
+    # Gas Consumption
+    GAS_CONSUMPTION_VOLUME = "7-1:99.23.15"  # Measured consumed volume (m³)
+    GAS_CONSUMPTION_STANDARD_VOLUME = "7-1:99.23.17"  # Measured consumed standard volume (Nm³)
+    GAS_CONSUMPTION_ENERGY = "7-20:99.33.17"  # Measured consumed energy (kWh)
 
 
 # Complete mapping of all OBIS codes to their details
 OBIS_CODES: Dict[str, ObisCodeInfo] = {
     # Electricity Consumption
-    ElectricityConsumption.ACTIVE: ObisCodeInfo(
-        ElectricityConsumption.ACTIVE,
+    ObisCode.ELEC_CONSUMPTION_ACTIVE: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_ACTIVE,
         "kW",
         "Consumption",
         "Measured active consumption",
     ),
-    ElectricityConsumption.REACTIVE: ObisCodeInfo(
-        ElectricityConsumption.REACTIVE,
+    ObisCode.ELEC_CONSUMPTION_REACTIVE: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_REACTIVE,
         "kVAR",
         "Consumption",
         "Measured reactive consumption",
     ),
-    ElectricityConsumption.COVERED_LAYER1: ObisCodeInfo(
-        ElectricityConsumption.COVERED_LAYER1,
+    ObisCode.ELEC_CONSUMPTION_COVERED_LAYER1: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_COVERED_LAYER1,
         "kW",
         "Consumption",
         "Consumption covered by production of layer 1 sharing Group (AIR)",
     ),
-    ElectricityConsumption.COVERED_LAYER2: ObisCodeInfo(
-        ElectricityConsumption.COVERED_LAYER2,
+    ObisCode.ELEC_CONSUMPTION_COVERED_LAYER2: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_COVERED_LAYER2,
         "kW",
         "Consumption",
         "Consumption covered by production of layer 2 sharing Group (ACR/ACF/AC1)",
     ),
-    ElectricityConsumption.COVERED_LAYER3: ObisCodeInfo(
-        ElectricityConsumption.COVERED_LAYER3,
+    ObisCode.ELEC_CONSUMPTION_COVERED_LAYER3: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_COVERED_LAYER3,
         "kW",
         "Consumption",
         "Consumption covered by production of layer 3 sharing Group (CEL)",
     ),
-    ElectricityConsumption.COVERED_LAYER4: ObisCodeInfo(
-        ElectricityConsumption.COVERED_LAYER4,
+    ObisCode.ELEC_CONSUMPTION_COVERED_LAYER4: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_COVERED_LAYER4,
         "kW",
         "Consumption",
         "Consumption covered by production of layer 4 sharing Group (APS/CER/CEN)",
     ),
-    ElectricityConsumption.REMAINING: ObisCodeInfo(
-        ElectricityConsumption.REMAINING,
+    ObisCode.ELEC_CONSUMPTION_REMAINING: ObisCodeInfo(
+        ObisCode.ELEC_CONSUMPTION_REMAINING,
         "kW",
         "Consumption",
         "Remaining consumption after sharing invoiced by supplier",
     ),
     # Electricity Production
-    ElectricityProduction.ACTIVE: ObisCodeInfo(
-        ElectricityProduction.ACTIVE, "kW", "Production", "Measured active production"
+    ObisCode.ELEC_PRODUCTION_ACTIVE: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_ACTIVE, "kW", "Production", "Measured active production"
     ),
-    ElectricityProduction.REACTIVE: ObisCodeInfo(
-        ElectricityProduction.REACTIVE,
+    ObisCode.ELEC_PRODUCTION_REACTIVE: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_REACTIVE,
         "kVAR",
         "Consumption",
         "Measured reactive production",
     ),
-    ElectricityProduction.SHARED_LAYER1: ObisCodeInfo(
-        ElectricityProduction.SHARED_LAYER1,
+    ObisCode.ELEC_PRODUCTION_SHARED_LAYER1: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_SHARED_LAYER1,
         "kW",
         "Production",
         "Production shared within layer 1 sharing Group (AIR)",
     ),
-    ElectricityProduction.SHARED_LAYER2: ObisCodeInfo(
-        ElectricityProduction.SHARED_LAYER2,
+    ObisCode.ELEC_PRODUCTION_SHARED_LAYER2: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_SHARED_LAYER2,
         "kW",
         "Production",
         "Production shared within layer 2 sharing Group (ACR/ACF/AC1)",
     ),
-    ElectricityProduction.SHARED_LAYER3: ObisCodeInfo(
-        ElectricityProduction.SHARED_LAYER3,
+    ObisCode.ELEC_PRODUCTION_SHARED_LAYER3: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_SHARED_LAYER3,
         "kW",
         "Production",
         "Production shared within layer 3 sharing Group (CEL)",
     ),
-    ElectricityProduction.SHARED_LAYER4: ObisCodeInfo(
-        ElectricityProduction.SHARED_LAYER4,
+    ObisCode.ELEC_PRODUCTION_SHARED_LAYER4: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_SHARED_LAYER4,
         "kW",
         "Production",
         "Production shared within layer 4 sharing Group (APS/CER/CEN)",
     ),
-    ElectricityProduction.REMAINING: ObisCodeInfo(
-        ElectricityProduction.REMAINING,
+    ObisCode.ELEC_PRODUCTION_REMAINING: ObisCodeInfo(
+        ObisCode.ELEC_PRODUCTION_REMAINING,
         "kW",
         "Production",
         "Remaining production after sharing sold to market",
     ),
     # Gas Consumption
-    GasConsumption.VOLUME: ObisCodeInfo(
-        GasConsumption.VOLUME, "m³", "Consumption", "Measured consumed volume"
+    ObisCode.GAS_CONSUMPTION_VOLUME: ObisCodeInfo(
+        ObisCode.GAS_CONSUMPTION_VOLUME, "m³", "Consumption", "Measured consumed volume"
     ),
-    GasConsumption.STANDARD_VOLUME: ObisCodeInfo(
-        GasConsumption.STANDARD_VOLUME,
+    ObisCode.GAS_CONSUMPTION_STANDARD_VOLUME: ObisCodeInfo(
+        ObisCode.GAS_CONSUMPTION_STANDARD_VOLUME,
         "Nm³",
         "Consumption",
         "Measured consumed standard volume",
     ),
-    GasConsumption.ENERGY: ObisCodeInfo(
-        GasConsumption.ENERGY, "kWh", "Consumption", "Measured consumed energy"
+    ObisCode.GAS_CONSUMPTION_ENERGY: ObisCodeInfo(
+        ObisCode.GAS_CONSUMPTION_ENERGY, "kWh", "Consumption", "Measured consumed energy"
     ),
 }
 
@@ -171,7 +168,7 @@ def get_obis_info(obis_code: str) -> ObisCodeInfo:
         KeyError: If the OBIS code is not found
 
     Example:
-        >>> info = get_obis_info(ElectricityConsumption.ACTIVE)
+        >>> info = get_obis_info(ObisCode.ELEC_CONSUMPTION_ACTIVE)
         >>> print(info.unit)
         'kW'
     """
@@ -192,7 +189,7 @@ def get_unit(obis_code: str) -> str:
         KeyError: If the OBIS code is not found
 
     Example:
-        >>> unit = get_unit(ElectricityConsumption.ACTIVE)
+        >>> unit = get_unit(ObisCode.ELEC_CONSUMPTION_ACTIVE)
         >>> print(unit)
         'kW'
     """

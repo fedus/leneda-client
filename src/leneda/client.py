@@ -8,11 +8,15 @@ energy consumption and production data for electricity and gas.
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-from .models import AggregatedMeteringData, MeteringData, ObisCode
+from src.leneda.models import (
+    AggregatedMeteringData,
+    MeteringData,
+)
+from src.leneda.obis_codes import ObisCode
 
 # Set up logging
 logger = logging.getLogger("leneda.client")
@@ -50,22 +54,22 @@ class LenedaClient:
 
     def _make_request(
         self,
+        method: str,
         endpoint: str,
-        method: str = "GET",
-        params: Dict[str, Any] = None,
-        data: Dict[str, Any] = None,
-    ) -> Dict[str, Any]:
+        params: Optional[dict] = None,
+        json_data: Optional[dict] = None,
+    ) -> dict:
         """
         Make a request to the Leneda API.
 
         Args:
-            endpoint: API endpoint to call
-            method: HTTP method to use
-            params: Query parameters
-            data: Request body data
+            method: The HTTP method to use
+            endpoint: The API endpoint to call
+            params: Optional query parameters
+            json_data: Optional JSON data to send in the request body
 
         Returns:
-            API response as a dictionary
+            The JSON response from the API
         """
         url = f"{self.BASE_URL}/{endpoint}"
 
@@ -73,13 +77,13 @@ class LenedaClient:
         logger.debug(f"Making {method} request to {url}")
         if params:
             logger.debug(f"Query parameters: {params}")
-        if data:
-            logger.debug(f"Request data: {data}")
+        if json_data:
+            logger.debug(f"Request data: {json.dumps(json_data, indent=2)}")
 
         try:
             # Make the request
             response = requests.request(
-                method=method, url=url, headers=self.headers, params=params, json=data
+                method=method, url=url, headers=self.headers, params=params, json=json_data
             )
 
             # Check for HTTP errors
@@ -148,7 +152,7 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = self._make_request(endpoint, params=params)
+        response_data = self._make_request(method="GET", endpoint=endpoint, params=params)
 
         # Parse the response into a MeteringData object
         return MeteringData.from_dict(response_data)
@@ -193,26 +197,26 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = self._make_request(endpoint, params=params)
+        response_data = self._make_request(method="GET", endpoint=endpoint, params=params)
 
         # Parse the response into an AggregatedMeteringData object
         return AggregatedMeteringData.from_dict(response_data)
 
     def request_metering_data_access(
         self,
-        fromEnergyId: str,
-        fromName: str,
-        meteringPointCodes: List[str],
-        obisPointCodes: List[ObisCode],
+        from_energy_id: str,
+        from_name: str,
+        metering_point_codes: List[str],
+        obis_point_codes: List[ObisCode],
     ) -> Dict[str, Any]:
         """
         Request access to metering data for a specific metering point.
 
         Args:
-            fromEnergyId: The energy ID of the requester
-            fromName: The name of the requester
-            meteringPointCodes: The metering point codes to access
-            obisPointCodes: The OBIS point codes to access (from ElectricityConsumption, ElectricityProduction, or GasConsumption)
+            from_energy_id: The energy ID of the requester
+            from_name: The name of the requester
+            metering_point_codes: The metering point codes to access
+            obis_point_codes: The OBIS point codes to access (from ElectricityConsumption, ElectricityProduction, or GasConsumption)
 
         Returns:
             Response data from the API
@@ -220,15 +224,15 @@ class LenedaClient:
         # Set up the endpoint and data
         endpoint = "metering-data-access-request"
         data = {
-            "from": fromEnergyId,
-            "fromName": fromName,
-            "meteringPointCodes": meteringPointCodes,
+            "from": from_energy_id,
+            "fromName": from_name,
+            "meteringPointCodes": metering_point_codes,
             "obisPointCodes": [
-                code.value for code in obisPointCodes
+                code.value for code in obis_point_codes
             ],  # Use enum values for API request
         }
 
         # Make the request
-        response_data = self._make_request(endpoint, method="POST", data=data)
+        response_data = self._make_request(method="POST", endpoint=endpoint, json_data=data)
 
         return response_data

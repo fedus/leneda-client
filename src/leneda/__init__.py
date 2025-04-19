@@ -5,6 +5,9 @@ This package provides a client for the Leneda API, which allows access to
 energy consumption and production data for electricity and gas.
 """
 
+# Import the OBIS code constants
+from src.leneda.obis_codes import ObisCode
+
 # Import the client class
 from .client import LenedaClient
 
@@ -16,18 +19,13 @@ from .models import (
     MeteringValue,
 )
 
-# Import the OBIS code constants
-from .obis_codes import ElectricityConsumption, ElectricityProduction, GasConsumption
-
 # Import the version
 from .version import __version__
 
 # Define what's available when using "from leneda import *"
 __all__ = [
     "LenedaClient",
-    "ElectricityConsumption",
-    "ElectricityProduction",
-    "GasConsumption",
+    "ObisCode",
     "MeteringValue",
     "MeteringData",
     "AggregatedMeteringValue",

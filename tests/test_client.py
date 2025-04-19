@@ -20,7 +20,7 @@ from src.leneda.models import (
     MeteringData,
     MeteringValue,
 )
-from src.leneda.obis_codes import ElectricityConsumption
+from src.leneda.obis_codes import ObisCode
 
 
 class TestLenedaClient(unittest.TestCase):
@@ -35,7 +35,7 @@ class TestLenedaClient(unittest.TestCase):
         # Sample response data
         self.sample_metering_data = {
             "meteringPointCode": "LU-METERING_POINT1",
-            "obisCode": ElectricityConsumption.ACTIVE,
+            "obisCode": ObisCode.ELEC_CONSUMPTION_ACTIVE,
             "intervalLength": "PT15M",
             "unit": "kWh",
             "items": [
@@ -87,7 +87,7 @@ class TestLenedaClient(unittest.TestCase):
         # Call the method
         result = self.client.get_metering_data(
             "LU-METERING_POINT1",
-            ElectricityConsumption.ACTIVE,
+            ObisCode.ELEC_CONSUMPTION_ACTIVE,
             "2023-01-01T00:00:00Z",
             "2023-01-02T00:00:00Z",
         )
@@ -95,7 +95,7 @@ class TestLenedaClient(unittest.TestCase):
         # Check the result
         self.assertIsInstance(result, MeteringData)
         self.assertEqual(result.metering_point_code, "LU-METERING_POINT1")
-        self.assertEqual(result.obis_code, ElectricityConsumption.ACTIVE)
+        self.assertEqual(result.obis_code, ObisCode.ELEC_CONSUMPTION_ACTIVE)
         self.assertEqual(result.unit, "kWh")
         self.assertEqual(len(result.items), 2)
 
@@ -117,7 +117,7 @@ class TestLenedaClient(unittest.TestCase):
                 "Content-Type": "application/json",
             },
             params={
-                "obisCode": ElectricityConsumption.ACTIVE.value,
+                "obisCode": ObisCode.ELEC_CONSUMPTION_ACTIVE.value,
                 "startDateTime": "2023-01-01T00:00:00Z",
                 "endDateTime": "2023-01-02T00:00:00Z",
             },
@@ -137,7 +137,7 @@ class TestLenedaClient(unittest.TestCase):
         # Call the method
         result = self.client.get_aggregated_metering_data(
             "LU-METERING_POINT1",
-            ElectricityConsumption.ACTIVE,
+            ObisCode.ELEC_CONSUMPTION_ACTIVE,
             "2023-01-01",
             "2023-01-31",
             "Day",
@@ -172,7 +172,7 @@ class TestLenedaClient(unittest.TestCase):
                 "Content-Type": "application/json",
             },
             params={
-                "obisCode": ElectricityConsumption.ACTIVE.value,
+                "obisCode": ObisCode.ELEC_CONSUMPTION_ACTIVE.value,
                 "startDate": "2023-01-01",
                 "endDate": "2023-01-31",
                 "aggregationLevel": "Day",
@@ -192,10 +192,10 @@ class TestLenedaClient(unittest.TestCase):
 
         # Call the method
         result = self.client.request_metering_data_access(
-            fromEnergyId="test_energy_id",
-            fromName="Test User",
-            meteringPointCodes=["LU-METERING_POINT1"],
-            obisPointCodes=[ElectricityConsumption.ACTIVE],
+            from_energy_id="test_energy_id",
+            from_name="Test User",
+            metering_point_codes=["LU-METERING_POINT1"],
+            obis_point_codes=[ObisCode.ELEC_CONSUMPTION_ACTIVE],
         )
 
         # Check the result
@@ -216,7 +216,7 @@ class TestLenedaClient(unittest.TestCase):
                 "from": "test_energy_id",
                 "fromName": "Test User",
                 "meteringPointCodes": ["LU-METERING_POINT1"],
-                "obisPointCodes": [ElectricityConsumption.ACTIVE.value],
+                "obisPointCodes": [ObisCode.ELEC_CONSUMPTION_ACTIVE.value],
             },
         )
 
@@ -230,7 +230,7 @@ class TestLenedaClient(unittest.TestCase):
         with self.assertRaises(requests.exceptions.HTTPError):
             self.client.get_metering_data(
                 "LU-METERING_POINT1",
-                ElectricityConsumption.ACTIVE,
+                ObisCode.ELEC_CONSUMPTION_ACTIVE,
                 "2023-01-01T00:00:00Z",
                 "2023-01-02T00:00:00Z",
             )

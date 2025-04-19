@@ -8,17 +8,14 @@ making it easier to work with the data in a type-safe manner.
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from dateutil import parser
 
-from .obis_codes import ElectricityConsumption, ElectricityProduction, GasConsumption
+from src.leneda.obis_codes import ObisCode
 
 # Set up logging
 logger = logging.getLogger("leneda.models")
-
-# Type alias for OBIS codes
-ObisCode = Union[ElectricityConsumption, ElectricityProduction, GasConsumption]
 
 
 @dataclass
@@ -83,7 +80,7 @@ class MeteringData:
 
             # Use values from the response
             metering_point_code_value = data["meteringPointCode"]
-            obis_code_value = data["obisCode"]
+            obis_code_value = ObisCode(data["obisCode"])
 
             # Extract items safely
             items_data = data.get("items", [])
