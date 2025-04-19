@@ -12,7 +12,7 @@ from typing import Any, Dict, List
 
 from dateutil import parser
 
-from src.leneda.obis_codes import ObisCode
+from .obis_codes import ObisCode
 
 # Set up logging
 logger = logging.getLogger("leneda.models")

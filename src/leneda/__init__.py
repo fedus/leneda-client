@@ -6,7 +6,7 @@ energy consumption and production data for electricity and gas.
 """
 
 # Import the OBIS code constants
-from src.leneda.obis_codes import ObisCode
+from .obis_codes import ObisCode
 
 # Import the client class
 from .client import LenedaClient

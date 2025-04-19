@@ -12,11 +12,11 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-from src.leneda.models import (
+from .models import (
     AggregatedMeteringData,
     MeteringData,
 )
-from src.leneda.obis_codes import ObisCode
+from .obis_codes import ObisCode
 
 # Set up logging
 logger = logging.getLogger("leneda.client")
