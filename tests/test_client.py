@@ -117,7 +117,7 @@ class TestLenedaClient(unittest.TestCase):
                 "Content-Type": "application/json",
             },
             params={
-                "obisCode": ElectricityConsumption.ACTIVE,
+                "obisCode": ElectricityConsumption.ACTIVE.value,
                 "startDateTime": "2023-01-01T00:00:00Z",
                 "endDateTime": "2023-01-02T00:00:00Z",
             },
@@ -172,7 +172,7 @@ class TestLenedaClient(unittest.TestCase):
                 "Content-Type": "application/json",
             },
             params={
-                "obisCode": ElectricityConsumption.ACTIVE,
+                "obisCode": ElectricityConsumption.ACTIVE.value,
                 "startDate": "2023-01-01",
                 "endDate": "2023-01-31",
                 "aggregationLevel": "Day",
@@ -187,12 +187,23 @@ class TestLenedaClient(unittest.TestCase):
         # Set up the mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = dict()
-        mock_response.content = "{}"
+        mock_response.json.return_value = {
+            "requestId": "test-request-id",
+            "status": "PENDING"
+        }
         mock_request.return_value = mock_response
 
         # Call the method
-        self.client.request_metering_data_access("LU-METERING_POINT1")
+        result = self.client.request_metering_data_access(
+            fromEnergyId="test_energy_id",
+            fromName="Test User",
+            meteringPointCodes=["LU-METERING_POINT1"],
+            obisPointCodes=[ElectricityConsumption.ACTIVE]
+        )
+
+        # Check the result
+        self.assertEqual(result["requestId"], "test-request-id")
+        self.assertEqual(result["status"], "PENDING")
 
         # Check that the request was made correctly
         mock_request.assert_called_once_with(
@@ -204,7 +215,12 @@ class TestLenedaClient(unittest.TestCase):
                 "Content-Type": "application/json",
             },
             params=None,
-            json={"meteringPointCode": "LU-METERING_POINT1"},
+            json={
+                "from": "test_energy_id",
+                "fromName": "Test User",
+                "meteringPointCodes": ["LU-METERING_POINT1"],
+                "obisPointCodes": [ElectricityConsumption.ACTIVE.value]
+            },
         )
 
     @patch("requests.request")

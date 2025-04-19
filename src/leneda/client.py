@@ -143,7 +143,7 @@ class LenedaClient:
         # Set up the endpoint and parameters
         endpoint = f"metering-points/{metering_point_code}/time-series"
         params = {
-            "obisCode": str(obis_code),  # Convert enum to string for API request
+            "obisCode": obis_code.value,  # Use enum value for API request
             "startDateTime": start_date_time,
             "endDateTime": end_date_time,
         }
@@ -188,7 +188,7 @@ class LenedaClient:
         # Set up the endpoint and parameters
         endpoint = f"metering-points/{metering_point_code}/time-series/aggregated"
         params = {
-            "obisCode": str(obis_code),  # Convert enum to string for API request
+            "obisCode": obis_code.value,  # Use enum value for API request
             "startDate": start_date,
             "endDate": end_date,
             "aggregationLevel": aggregation_level,
@@ -226,7 +226,7 @@ class LenedaClient:
             "from": fromEnergyId,
             "fromName": fromName,
             "meteringPointCodes": meteringPointCodes,
-            "obisPointCodes": [str(code) for code in obisPointCodes],  # Convert enums to strings for API request
+            "obisPointCodes": [code.value for code in obisPointCodes],  # Use enum values for API request
         }
 
         # Make the request
