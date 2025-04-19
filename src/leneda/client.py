@@ -13,7 +13,6 @@ from typing import Any, Dict, List, Union
 import requests
 
 from .models import AggregatedMeteringData, MeteringData, ObisCode
-from .obis_codes import ElectricityConsumption, ElectricityProduction, GasConsumption
 
 # Set up logging
 logger = logging.getLogger("leneda.client")
@@ -152,9 +151,7 @@ class LenedaClient:
         response_data = self._make_request(endpoint, params=params)
 
         # Parse the response into a MeteringData object
-        return MeteringData.from_dict(
-            response_data
-        )
+        return MeteringData.from_dict(response_data)
 
     def get_aggregated_metering_data(
         self,
@@ -226,7 +223,9 @@ class LenedaClient:
             "from": fromEnergyId,
             "fromName": fromName,
             "meteringPointCodes": meteringPointCodes,
-            "obisPointCodes": [code.value for code in obisPointCodes],  # Use enum values for API request
+            "obisPointCodes": [
+                code.value for code in obisPointCodes
+            ],  # Use enum values for API request
         }
 
         # Make the request

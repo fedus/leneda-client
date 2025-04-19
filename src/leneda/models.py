@@ -75,9 +75,7 @@ class MeteringData:
     items: List[MeteringValue] = field(default_factory=list)
 
     @classmethod
-    def from_dict(
-        cls, data: Dict[str, Any]
-    ) -> "MeteringData":
+    def from_dict(cls, data: Dict[str, Any]) -> "MeteringData":
         """Create a MeteringData from a dictionary."""
         try:
             # Log the raw data for debugging

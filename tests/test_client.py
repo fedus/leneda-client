@@ -187,10 +187,7 @@ class TestLenedaClient(unittest.TestCase):
         # Set up the mock response
         mock_response = MagicMock()
         mock_response.status_code = 200
-        mock_response.json.return_value = {
-            "requestId": "test-request-id",
-            "status": "PENDING"
-        }
+        mock_response.json.return_value = {"requestId": "test-request-id", "status": "PENDING"}
         mock_request.return_value = mock_response
 
         # Call the method
@@ -198,7 +195,7 @@ class TestLenedaClient(unittest.TestCase):
             fromEnergyId="test_energy_id",
             fromName="Test User",
             meteringPointCodes=["LU-METERING_POINT1"],
-            obisPointCodes=[ElectricityConsumption.ACTIVE]
+            obisPointCodes=[ElectricityConsumption.ACTIVE],
         )
 
         # Check the result
@@ -219,7 +216,7 @@ class TestLenedaClient(unittest.TestCase):
                 "from": "test_energy_id",
                 "fromName": "Test User",
                 "meteringPointCodes": ["LU-METERING_POINT1"],
-                "obisPointCodes": [ElectricityConsumption.ACTIVE.value]
+                "obisPointCodes": [ElectricityConsumption.ACTIVE.value],
             },
         )
 
