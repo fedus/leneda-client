@@ -8,7 +8,7 @@ energy consumption and production data for electricity and gas.
 import json
 import logging
 from datetime import datetime
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import requests
 
@@ -200,19 +200,27 @@ class LenedaClient:
         # Parse the response into an AggregatedMeteringData object
         return AggregatedMeteringData.from_dict(response_data)
 
-    def request_metering_data_access(self, metering_point_code: str) -> Dict[str, Any]:
+    def request_metering_data_access(self, fromEnergyId: str, fromName: str, meteringPointCodes: List[str], obisPointCodes: List[str]) -> Dict[str, Any]:
         """
         Request access to metering data for a specific metering point.
 
         Args:
-            metering_point_code: The metering point code
+            fromEnergyId: The energy ID of the requester
+            fromName: The name of the requester
+            meteringPointCodes: The metering point codes to access
+            obisPointCodes: The OBIS point codes to access
 
         Returns:
             Response data from the API
         """
         # Set up the endpoint and data
         endpoint = "metering-data-access-request"
-        data = {"meteringPointCode": metering_point_code}
+        data = {
+            "from": fromEnergyId,
+            "fromName": fromName,
+            "meteringPointCodes": meteringPointCodes,
+            "obisPointCodes": obisPointCodes
+        }
 
         # Make the request
         response_data = self._make_request(endpoint, method="POST", data=data)
