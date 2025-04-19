@@ -10,8 +10,8 @@ LENEDA_API_KEY: Your Leneda API key
 LENEDA_ENERGY_ID: Your Energy ID
 
 Usage:
-python advanced_usage.py --api-key YOUR_API_KEY --energy-id YOUR_ENERGY_ID
-python advanced_usage.py --metering-point LU-METERING_POINT1 --example 2
+python advanced_usage.py --api-key YOUR_API_KEY --energy-id YOUR_ENERGY_ID --metering-point LU-METERING_POINT1
+python advanced_usage.py --api-key YOUR_API_KEY --energy-id YOUR_ENERGY_ID --metering-point LU-METERING_POINT1 --example 2
 """
 
 import argparse
@@ -24,12 +24,9 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import pandas as pd
 
-from leneda import (
-    AggregatedMeteringData,
-    ElectricityConsumption,
-    LenedaClient,
-    MeteringData,
-)
+from leneda import LenedaClient
+from leneda.models import AggregatedMeteringData, MeteringData
+from leneda.obis_codes import ObisCode
 
 # Set up logging
 logging.basicConfig(
@@ -193,7 +190,7 @@ def compare_consumption_periods(
     # Get data for period 1
     period1_data = client.get_metering_data(
         metering_point_code=metering_point,
-        obis_code=ElectricityConsumption.ACTIVE,
+        obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
         start_date_time=period1_start,
         end_date_time=period1_end,
     )
@@ -201,7 +198,7 @@ def compare_consumption_periods(
     # Get data for period 2
     period2_data = client.get_metering_data(
         metering_point_code=metering_point,
-        obis_code=ElectricityConsumption.ACTIVE,
+        obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
         start_date_time=period2_start,
         end_date_time=period2_end,
     )
@@ -290,7 +287,7 @@ def analyze_monthly_trends(
 
     monthly_data = client.get_aggregated_metering_data(
         metering_point_code=metering_point,
-        obis_code=ElectricityConsumption.ACTIVE,
+        obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
         start_date=start_date,
         end_date=end_date,
         aggregation_level="Month",
@@ -355,7 +352,7 @@ def detect_consumption_anomalies(
     # Get hourly consumption data
     consumption_data = client.get_metering_data(
         metering_point_code=metering_point,
-        obis_code=ElectricityConsumption.ACTIVE,
+        obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
         start_date_time=start_date,
         end_date_time=end_date,
     )
@@ -473,7 +470,7 @@ def main():
             )
             consumption_data = client.get_metering_data(
                 metering_point_code=metering_point,
-                obis_code=ElectricityConsumption.ACTIVE,
+                obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
                 start_date_time=start_date,
                 end_date_time=end_date,
             )

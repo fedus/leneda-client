@@ -9,8 +9,7 @@ Environment variables:
     LENEDA_ENERGY_ID: Your Energy ID
 
 Usage:
-    python basic_usage.py --api-key YOUR_API_KEY --energy-id YOUR_ENERGY_ID
-    python basic_usage.py --metering-point LU-METERING_POINT1
+    python basic_usage.py --api-key YOUR_API_KEY --energy-id YOUR_ENERGY_ID --metering-point LU-METERING_POINT1
 """
 
 import argparse
@@ -19,7 +18,8 @@ import os
 import sys
 from datetime import datetime, timedelta
 
-from leneda import ElectricityConsumption, LenedaClient
+from leneda import LenedaClient
+from leneda.obis_codes import ObisCode
 
 # Set up logging
 logging.basicConfig(
@@ -106,7 +106,7 @@ def main():
         print(f"\nExample 1: Getting hourly electricity consumption data for the last {days} days")
         consumption_data = client.get_metering_data(
             metering_point_code=metering_point,
-            obis_code=ElectricityConsumption.ACTIVE,
+            obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
             start_date_time=start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
             end_date_time=end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
         )
@@ -135,7 +135,7 @@ def main():
         print(f"\nExample 2: Getting monthly aggregated electricity consumption for {today.year}")
         monthly_consumption = client.get_aggregated_metering_data(
             metering_point_code=metering_point,
-            obis_code=ElectricityConsumption.ACTIVE,
+            obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
             start_date=first_day.strftime("%Y-%m-%d"),
             end_date=last_day.strftime("%Y-%m-%d"),
             aggregation_level="Month",
