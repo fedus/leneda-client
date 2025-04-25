@@ -1,6 +1,9 @@
 # Leneda API Client
 
 [![PyPI version](https://img.shields.io/pypi/v/leneda-client.svg)](https://pypi.org/project/leneda-client/)
+[![Python Versions](https://img.shields.io/pypi/pyversions/leneda-client)](https://pypi.org/project/leneda-client/)
+[![License](https://img.shields.io/github/license/fedus/leneda-client)](https://github.com/fedus/leneda-client/blob/main/LICENSE)
+
 
 A Python client for interacting with the Leneda energy data platform API.
 
