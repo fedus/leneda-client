@@ -22,7 +22,7 @@ This client provides a simple interface to the Leneda API, which allows users to
 pip install leneda-client
 ```
 
-## Testing
+## Trying it out
 
 ```bash
 $ export LENEDA_ENERGY_ID='LUXE-xx-yy-1234'
