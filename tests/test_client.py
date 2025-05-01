@@ -14,7 +14,11 @@ import requests
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.leneda import LenedaClient
-from src.leneda.exceptions import ForbiddenException, UnauthorizedException
+from src.leneda.exceptions import (
+    ForbiddenException,
+    InvalidMeteringPointException,
+    UnauthorizedException,
+)
 from src.leneda.models import (
     AggregatedMeteringData,
     AggregatedMeteringValue,
@@ -277,6 +281,45 @@ class TestLenedaClient(unittest.TestCase):
                 "2023-01-01T00:00:00Z",
                 "2023-01-02T00:00:00Z",
             )
+
+    @patch("requests.request")
+    def test_test_metering_point_valid(self, mock_request):
+        """Test test_metering_point with a valid metering point."""
+        # Set up the mock response with valid data
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"unit": "kWh", "aggregatedTimeSeries": []}
+        mock_response.content = json.dumps(mock_response.json.return_value).encode()
+        mock_request.return_value = mock_response
+
+        # Call the method
+        result = self.client.test_metering_point("LU-METERING_POINT1")
+
+        # Check the result
+        self.assertTrue(result)
+
+        # Check that the request was made correctly
+        mock_request.assert_called_once()
+
+    @patch("requests.request")
+    def test_test_metering_point_invalid(self, mock_request):
+        """Test test_metering_point with an invalid metering point."""
+        # Set up the mock response with null unit
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"unit": None, "aggregatedTimeSeries": []}
+        mock_response.content = json.dumps(mock_response.json.return_value).encode()
+        mock_request.return_value = mock_response
+
+        # Call the method and check that it raises InvalidMeteringPointException
+        with self.assertRaises(InvalidMeteringPointException) as context:
+            self.client.test_metering_point("INVALID-METERING-POINT")
+
+        # Check the error message
+        self.assertIn("INVALID-METERING-POINT", str(context.exception))
+
+        # Check that the request was made correctly
+        mock_request.assert_called_once()
 
 
 if __name__ == "__main__":

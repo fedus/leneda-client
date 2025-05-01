@@ -7,12 +7,12 @@ energy consumption and production data for electricity and gas.
 
 import json
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-from .exceptions import ForbiddenException, UnauthorizedException
+from .exceptions import ForbiddenException, InvalidMeteringPointException, UnauthorizedException
 from .models import (
     AggregatedMeteringData,
     MeteringData,
@@ -249,3 +249,44 @@ class LenedaClient:
         response_data = self._make_request(method="POST", endpoint=endpoint, json_data=data)
 
         return response_data
+
+    def test_metering_point(self, metering_point_code: str) -> bool:
+        """
+        Test if a metering point code is valid and accessible.
+
+        This method checks if a metering point code is valid by making a request
+        for aggregated metering data. If the unit property in the response is null,
+        it indicates that the metering point is invalid or not accessible.
+
+        Args:
+            metering_point_code: The metering point code to test
+
+        Returns:
+            bool: True if the metering point is valid and accessible, False otherwise
+
+        Raises:
+            UnauthorizedException: If the API returns a 401 status code
+            ForbiddenException: If the API returns a 403 status code
+            requests.exceptions.RequestException: For other request errors
+        """
+        # Use arbitrary time window
+        end_date = datetime.now()
+        start_date = end_date - timedelta(weeks=4)
+
+        # Try to get aggregated data for electricity consumption
+        result = self.get_aggregated_metering_data(
+            metering_point_code=metering_point_code,
+            obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
+            start_date=start_date,
+            end_date=end_date,
+            aggregation_level="Month",
+            transformation_mode="Accumulation",
+        )
+
+        # If we get here and the unit is None, the metering point is invalid
+        if result.unit is None:
+            raise InvalidMeteringPointException(
+                f"Metering point {metering_point_code} is invalid or not accessible"
+            )
+
+        return True
