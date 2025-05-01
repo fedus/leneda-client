@@ -14,6 +14,7 @@ import requests
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.leneda import LenedaClient
+from src.leneda.exceptions import ForbiddenException, UnauthorizedException
 from src.leneda.models import (
     AggregatedMeteringData,
     AggregatedMeteringValue,
@@ -221,8 +222,50 @@ class TestLenedaClient(unittest.TestCase):
         )
 
     @patch("requests.request")
+    def test_unauthorized_error(self, mock_request):
+        """Test handling of 401 Unauthorized errors."""
+        # Set up the mock response with 401 status
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.content = b"Unauthorized"
+        mock_request.return_value = mock_response
+
+        # Call the method and check that it raises UnauthorizedException
+        with self.assertRaises(UnauthorizedException) as context:
+            self.client.get_metering_data(
+                "LU-METERING_POINT1",
+                ObisCode.ELEC_CONSUMPTION_ACTIVE,
+                "2023-01-01T00:00:00Z",
+                "2023-01-02T00:00:00Z",
+            )
+
+        # Check the error message
+        self.assertIn("API authentication failed", str(context.exception))
+
+    @patch("requests.request")
+    def test_forbidden_error(self, mock_request):
+        """Test handling of 403 Forbidden errors."""
+        # Set up the mock response with 403 status
+        mock_response = MagicMock()
+        mock_response.status_code = 403
+        mock_response.content = b"Forbidden"
+        mock_request.return_value = mock_response
+
+        # Call the method and check that it raises ForbiddenException
+        with self.assertRaises(ForbiddenException) as context:
+            self.client.get_metering_data(
+                "LU-METERING_POINT1",
+                ObisCode.ELEC_CONSUMPTION_ACTIVE,
+                "2023-01-01T00:00:00Z",
+                "2023-01-02T00:00:00Z",
+            )
+
+        # Check the error message
+        self.assertIn("geoblocking", str(context.exception))
+
+    @patch("requests.request")
     def test_error_handling(self, mock_request):
-        """Test error handling."""
+        """Test error handling for other HTTP errors."""
         # Set up the mock response to raise an exception
         mock_request.side_effect = requests.exceptions.HTTPError("404 Client Error")
 

@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 
+from .exceptions import ForbiddenException, UnauthorizedException
 from .models import (
     AggregatedMeteringData,
     MeteringData,
@@ -70,6 +71,12 @@ class LenedaClient:
 
         Returns:
             The JSON response from the API
+
+        Raises:
+            UnauthorizedException: If the API returns a 401 status code
+            ForbiddenException: If the API returns a 403 status code
+            requests.exceptions.RequestException: For other request errors
+            json.JSONDecodeError: If the response cannot be parsed as JSON
         """
         url = f"{self.BASE_URL}/{endpoint}"
 
@@ -87,6 +94,14 @@ class LenedaClient:
             )
 
             # Check for HTTP errors
+            if response.status_code == 401:
+                raise UnauthorizedException(
+                    "API authentication failed. Please check your API key and energy ID."
+                )
+            if response.status_code == 403:
+                raise ForbiddenException(
+                    "Access forbidden. This may be due to Leneda's geoblocking or other access restrictions."
+                )
             response.raise_for_status()
 
             # Parse the response
