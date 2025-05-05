@@ -323,6 +323,61 @@ class TestLenedaClient(unittest.TestCase):
         # Check that the request was made correctly
         mock_request.assert_called_once()
 
+    @patch("requests.request")
+    def test_get_supported_obis_codes(self, mock_request):
+        """Test getting supported OBIS codes for a metering point."""
+
+        # Set up the mock response to return different results for different OBIS codes
+        def mock_response_side_effect(*args, **kwargs):
+            mock_response = MagicMock()
+            mock_response.status_code = 200
+
+            # Check which OBIS code is being probed
+            obis_code = kwargs.get("params", {}).get("obisCode")
+            if obis_code == ObisCode.ELEC_CONSUMPTION_ACTIVE.value:
+                mock_response.json.return_value = {"unit": "kWh", "aggregatedTimeSeries": []}
+            elif obis_code == ObisCode.ELEC_PRODUCTION_ACTIVE.value:
+                mock_response.json.return_value = {"unit": "kWh", "aggregatedTimeSeries": []}
+            else:
+                mock_response.json.return_value = {"unit": None, "aggregatedTimeSeries": []}
+
+            mock_response.content = json.dumps(mock_response.json.return_value).encode()
+            return mock_response
+
+        mock_request.side_effect = mock_response_side_effect
+
+        # Call the method
+        result = self.client.get_supported_obis_codes("LU-METERING_POINT1")
+
+        # Check the result
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 2)  # We expect 2 supported OBIS codes
+        self.assertIn(ObisCode.ELEC_CONSUMPTION_ACTIVE, result)
+        self.assertIn(ObisCode.ELEC_PRODUCTION_ACTIVE, result)
+
+        # Check that the request was made for each OBIS code
+        self.assertEqual(mock_request.call_count, len(ObisCode))
+
+    @patch("requests.request")
+    def test_get_supported_obis_codes_none(self, mock_request):
+        """Test getting supported OBIS codes when none are supported."""
+        # Set up the mock response to return null unit for all OBIS codes
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {"unit": None, "aggregatedTimeSeries": []}
+        mock_response.content = json.dumps(mock_response.json.return_value).encode()
+        mock_request.return_value = mock_response
+
+        # Call the method
+        result = self.client.get_supported_obis_codes("INVALID-METERING-POINT")
+
+        # Check the result
+        self.assertIsInstance(result, list)
+        self.assertEqual(len(result), 0)  # No supported OBIS codes
+
+        # Check that the request was made for each OBIS code
+        self.assertEqual(mock_request.call_count, len(ObisCode))
+
 
 if __name__ == "__main__":
     unittest.main()

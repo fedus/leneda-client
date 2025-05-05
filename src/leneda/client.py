@@ -254,6 +254,9 @@ class LenedaClient:
         """
         Probe if a metering point provides data for a specific OBIS code.
 
+        NOTE: This method is essentially a best guess since the Leneda API does not provide a way to check
+        if a metering point provides data for a specific OBIS code or whether a metering point code is valid
+
         This method checks if a metering point provides data for the specified OBIS code by making a request
         for aggregated metering data. If the unit property in the response is null, it indicates that either:
         - The metering point is invalid, or
@@ -287,3 +290,31 @@ class LenedaClient:
 
         # Return True if we got data (unit is not None), False otherwise
         return result.unit is not None
+
+    def get_supported_obis_codes(self, metering_point_code: str) -> List[ObisCode]:
+        """
+        Get all OBIS codes that are supported by a given metering point.
+
+        NOTE: Please see the documentation of the probe_metering_point_obis_code method about best guess
+        behaviour. If this method returns an empty list, chances are high that the metering point code
+        is invalid or that the Energy ID has no access to it.
+
+        This method probes each OBIS code defined in the ObisCode enum to determine
+        which ones are supported by the specified metering point.
+
+        Args:
+            metering_point_code: The metering point code to check
+
+        Returns:
+            List[ObisCode]: A list of OBIS codes that are supported by the metering point
+
+        Raises:
+            UnauthorizedException: If the API returns a 401 status code
+            ForbiddenException: If the API returns a 403 status code
+            requests.exceptions.RequestException: For other request errors
+        """
+        return [
+            obis_code
+            for obis_code in ObisCode
+            if self.probe_metering_point_obis_code(metering_point_code, obis_code)
+        ]
