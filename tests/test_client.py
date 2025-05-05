@@ -16,7 +16,6 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from src.leneda import LenedaClient
 from src.leneda.exceptions import (
     ForbiddenException,
-    InvalidMeteringPointException,
     UnauthorizedException,
 )
 from src.leneda.models import (
@@ -283,8 +282,8 @@ class TestLenedaClient(unittest.TestCase):
             )
 
     @patch("requests.request")
-    def test_test_metering_point_valid(self, mock_request):
-        """Test test_metering_point with a valid metering point."""
+    def test_probe_metering_point_obis_code_valid(self, mock_request):
+        """Test probe_metering_point_obis_code with a valid metering point and OBIS code."""
         # Set up the mock response with valid data
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -293,7 +292,9 @@ class TestLenedaClient(unittest.TestCase):
         mock_request.return_value = mock_response
 
         # Call the method
-        result = self.client.test_metering_point("LU-METERING_POINT1")
+        result = self.client.probe_metering_point_obis_code(
+            "LU-METERING_POINT1", ObisCode.ELEC_CONSUMPTION_ACTIVE
+        )
 
         # Check the result
         self.assertTrue(result)
@@ -302,8 +303,8 @@ class TestLenedaClient(unittest.TestCase):
         mock_request.assert_called_once()
 
     @patch("requests.request")
-    def test_test_metering_point_invalid(self, mock_request):
-        """Test test_metering_point with an invalid metering point."""
+    def test_probe_metering_point_obis_code_invalid(self, mock_request):
+        """Test probe_metering_point_obis_code with an invalid metering point or unsupported OBIS code."""
         # Set up the mock response with null unit
         mock_response = MagicMock()
         mock_response.status_code = 200
@@ -311,12 +312,13 @@ class TestLenedaClient(unittest.TestCase):
         mock_response.content = json.dumps(mock_response.json.return_value).encode()
         mock_request.return_value = mock_response
 
-        # Call the method and check that it raises InvalidMeteringPointException
-        with self.assertRaises(InvalidMeteringPointException) as context:
-            self.client.test_metering_point("INVALID-METERING-POINT")
+        # Call the method
+        result = self.client.probe_metering_point_obis_code(
+            "INVALID-METERING-POINT", ObisCode.ELEC_CONSUMPTION_ACTIVE
+        )
 
-        # Check the error message
-        self.assertIn("INVALID-METERING-POINT", str(context.exception))
+        # Check the result
+        self.assertFalse(result)
 
         # Check that the request was made correctly
         mock_request.assert_called_once()

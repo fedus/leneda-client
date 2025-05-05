@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional, Union
 
 import requests
 
-from .exceptions import ForbiddenException, InvalidMeteringPointException, UnauthorizedException
+from .exceptions import ForbiddenException, UnauthorizedException
 from .models import (
     AggregatedMeteringData,
     MeteringData,
@@ -250,19 +250,21 @@ class LenedaClient:
 
         return response_data
 
-    def test_metering_point(self, metering_point_code: str) -> bool:
+    def probe_metering_point_obis_code(self, metering_point_code: str, obis_code: ObisCode) -> bool:
         """
-        Test if a metering point code is valid and accessible.
+        Probe if a metering point provides data for a specific OBIS code.
 
-        This method checks if a metering point code is valid by making a request
-        for aggregated metering data. If the unit property in the response is null,
-        it indicates that the metering point is invalid or not accessible.
+        This method checks if a metering point provides data for the specified OBIS code by making a request
+        for aggregated metering data. If the unit property in the response is null, it indicates that either:
+        - The metering point is invalid, or
+        - The metering point does not provide data for the specified OBIS code
 
         Args:
-            metering_point_code: The metering point code to test
+            metering_point_code: The metering point code to probe
+            obis_code: The OBIS code to check for data availability
 
         Returns:
-            bool: True if the metering point is valid and accessible, False otherwise
+            bool: True if the metering point provides data for the specified OBIS code, False otherwise
 
         Raises:
             UnauthorizedException: If the API returns a 401 status code
@@ -273,20 +275,15 @@ class LenedaClient:
         end_date = datetime.now()
         start_date = end_date - timedelta(weeks=4)
 
-        # Try to get aggregated data for electricity consumption
+        # Try to get aggregated data for the specified OBIS code
         result = self.get_aggregated_metering_data(
             metering_point_code=metering_point_code,
-            obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
+            obis_code=obis_code,
             start_date=start_date,
             end_date=end_date,
             aggregation_level="Month",
             transformation_mode="Accumulation",
         )
 
-        # If we get here and the unit is None, the metering point is invalid
-        if result.unit is None:
-            raise InvalidMeteringPointException(
-                f"Metering point {metering_point_code} is invalid or not accessible"
-            )
-
-        return True
+        # Return True if we got data (unit is not None), False otherwise
+        return result.unit is not None
