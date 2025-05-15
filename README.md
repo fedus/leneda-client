@@ -7,6 +7,9 @@
 
 A Python client for interacting with the Leneda energy data platform API.
 
+PLEASE NOTE: As long as the library is in a version below 1.0.0, breaking changes
+may also be introduced between minor version bumps.
+
 ## Overview
 
 This client provides a simple interface to the Leneda API, which allows users to:
