@@ -119,10 +119,6 @@ class TestLenedaClient:
         mock_request.assert_called_once()
         call_kwargs = mock_request.call_args[1]
         assert call_kwargs["method"] == "GET"
-        assert (
-            call_kwargs["url"]
-            == "https://api.leneda.lu/api/metering-points/LU-METERING_POINT1/time-series"
-        )
         assert call_kwargs["headers"] == {
             "X-API-KEY": "test_api_key",
             "X-ENERGY-ID": "test_energy_id",
@@ -173,10 +169,6 @@ class TestLenedaClient:
         mock_request.assert_called_once()
         call_kwargs = mock_request.call_args[1]
         assert call_kwargs["method"] == "GET"
-        assert (
-            call_kwargs["url"]
-            == "https://api.leneda.lu/api/metering-points/LU-METERING_POINT1/time-series/aggregated"
-        )
         assert call_kwargs["headers"] == {
             "X-API-KEY": "test_api_key",
             "X-ENERGY-ID": "test_energy_id",

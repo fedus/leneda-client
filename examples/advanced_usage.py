@@ -131,7 +131,9 @@ def convert_to_dataframe(data: MeteringData) -> pd.DataFrame:
     return df
 
 
-def plot_consumption_data(df: pd.DataFrame, title: str, unit: str, save_path: Optional[str] = None) -> None:
+def plot_consumption_data(
+    df: pd.DataFrame, title: str, unit: str, save_path: Optional[str] = None
+) -> None:
     """Plot consumption data."""
     plt.figure(figsize=(12, 6))
     plt.plot(df.index, df["value"], label="Consumption")
@@ -188,7 +190,7 @@ async def main():
         start_date = end_date - timedelta(days=days)
 
         print(
-            f"\nExample 1: Visualizing hourly electricity consumption for the last {days} days"
+            f"\nExample 1: Visualizing hourly electricity consumption (kWh) for the last {days} days"
         )
         consumption_data = await client.get_metering_data(
             metering_point_code=metering_point,
@@ -197,23 +199,33 @@ async def main():
             end_date_time=end_date,
         )
 
-        # Convert to DataFrame and plot
+        # Convert to DataFrame and compute kWh for each 15-min period
         df = convert_to_dataframe(consumption_data)
-        plot_consumption_data(
-            df,
-            f"Hourly Electricity Consumption ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})",
-            unit=consumption_data.unit,
-            save_path=(
-                os.path.join(output_dir, "hourly_consumption.png") if save_plots else None
-            ),
+        df["kWh"] = df["value"] * 0.25  # 15 min = 0.25 h
+        # Resample to hourly energy (sum of 4 periods per hour)
+        hourly_kwh = df["kWh"].resample("H").sum()
+        plt.figure(figsize=(12, 6))
+        plt.plot(hourly_kwh.index, hourly_kwh.values, label="Hourly Energy Consumption")
+        plt.title(
+            f"Hourly Electricity Consumption (kWh) ({start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')})"
         )
+        plt.xlabel("Time")
+        plt.ylabel("Consumption (kWh)")
+        plt.grid(True)
+        plt.legend()
+        if save_plots:
+            os.makedirs(output_dir, exist_ok=True)
+            plt.savefig(os.path.join(output_dir, "hourly_consumption_kwh.png"))
+            plt.close()
+        else:
+            plt.show()
 
     if example_num == 0 or example_num == 2:
-        # Example 2: Analyze daily consumption patterns
+        # Example 2: Analyze daily consumption patterns (average power in kW)
         end_date = datetime.now()
         start_date = end_date - timedelta(days=30)  # Last 30 days
 
-        print("\nExample 2: Analyzing daily consumption patterns")
+        print("\nExample 2: Analyzing daily average power patterns (kW)")
         consumption_data = await client.get_metering_data(
             metering_point_code=metering_point,
             obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
@@ -226,18 +238,17 @@ async def main():
         df["hour"] = df.index.hour
         df["day_of_week"] = df.index.day_name()
 
-        # Calculate average consumption by hour
+        # Calculate average power by hour (kW)
         hourly_avg = df.groupby("hour")["value"].mean()
         plt.figure(figsize=(12, 6))
         hourly_avg.plot(kind="bar")
-        plt.title("Average Hourly Electricity Consumption")
+        plt.title("Average Hourly Power (kW)")
         plt.xlabel("Hour of Day")
-        plt.ylabel(f"Average Consumption ({consumption_data.unit})")
+        plt.ylabel("Average Power (kW)")
         plt.grid(True)
-
         if save_plots:
             os.makedirs(output_dir, exist_ok=True)
-            plt.savefig(os.path.join(output_dir, "hourly_patterns.png"))
+            plt.savefig(os.path.join(output_dir, "hourly_patterns_kw.png"))
             plt.close()
         else:
             plt.show()
