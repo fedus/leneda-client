@@ -13,6 +13,7 @@ Usage:
 """
 
 import argparse
+import asyncio
 import logging
 import os
 import sys
@@ -78,7 +79,7 @@ def get_credentials(args):
     return api_key, energy_id
 
 
-def main():
+async def main():
     # Parse command-line arguments
     args = parse_arguments()
 
@@ -98,66 +99,62 @@ def main():
     # Initialize the client
     client = LenedaClient(api_key, energy_id, debug=args.debug)
 
-    try:
-        # Example 1: Get hourly electricity consumption data for the specified number of days
-        end_date = datetime.now()
-        start_date = end_date - timedelta(days=days)
+    # Example 1: Get hourly electricity consumption data for the specified number of days
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=days)
 
-        print(f"\nExample 1: Getting hourly electricity consumption data for the last {days} days")
-        consumption_data = client.get_metering_data(
-            metering_point_code=metering_point,
-            obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
-            start_date_time=start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            end_date_time=end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        )
+    print(f"\nExample 1: Getting hourly electricity consumption data for the last {days} days")
+    consumption_data = await client.get_metering_data(
+        metering_point_code=metering_point,
+        obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
+        start_date_time=start_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        end_date_time=end_date.strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
 
-        # Process and display the data
-        print(f"Retrieved {len(consumption_data.items)} consumption measurements")
-        print(f"Unit: {consumption_data.unit}")
-        print(f"Interval length: {consumption_data.interval_length}")
-        print(f"Metering point: {consumption_data.metering_point_code}")
-        print(f"OBIS code: {consumption_data.obis_code}")
+    # Process and display the data
+    print(f"Retrieved {len(consumption_data.items)} consumption measurements")
+    print(f"Unit: {consumption_data.unit}")
+    print(f"Interval length: {consumption_data.interval_length}")
+    print(f"Metering point: {consumption_data.metering_point_code}")
+    print(f"OBIS code: {consumption_data.obis_code}")
 
-        # Display the first 3 items
-        if consumption_data.items:
-            print("\nFirst 3 measurements:")
-            for item in consumption_data.items[:3]:
-                print(
-                    f"Time: {item.started_at.isoformat()}, Value: {item.value} {consumption_data.unit}, "
-                    f"Type: {item.type}, Version: {item.version}, Calculated: {item.calculated}"
-                )
+    # Display the first 3 items
+    if consumption_data.items:
+        print("\nFirst 3 measurements:")
+        for item in consumption_data.items[:3]:
+            print(
+                f"Time: {item.started_at.isoformat()}, Value: {item.value} {consumption_data.unit}, "
+                f"Type: {item.type}, Version: {item.version}, Calculated: {item.calculated}"
+            )
 
-        # Example 2: Get monthly aggregated electricity consumption for the current year
-        today = datetime.now()
-        first_day = datetime(today.year, 1, 1)
-        last_day = datetime(today.year, 12, 31)
+    # Example 2: Get monthly aggregated electricity consumption for the current year
+    today = datetime.now()
+    start_of_year = datetime(today.year, 1, 1)
 
-        print(f"\nExample 2: Getting monthly aggregated electricity consumption for {today.year}")
-        monthly_consumption = client.get_aggregated_metering_data(
-            metering_point_code=metering_point,
-            obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
-            start_date=first_day.strftime("%Y-%m-%d"),
-            end_date=last_day.strftime("%Y-%m-%d"),
-            aggregation_level="Month",
-            transformation_mode="Accumulation",
-        )
+    print("\nExample 2: Getting monthly aggregated electricity consumption for the current year")
+    aggregated_data = await client.get_aggregated_metering_data(
+        metering_point_code=metering_point,
+        obis_code=ObisCode.ELEC_CONSUMPTION_ACTIVE,
+        start_date=start_of_year.strftime("%Y-%m-%d"),
+        end_date=today.strftime("%Y-%m-%d"),
+        aggregation_level="Month",
+        transformation_mode="Accumulation",
+    )
 
-        # Process and display the data
-        print(f"Retrieved {len(monthly_consumption.aggregated_time_series)} monthly aggregations")
-        print(f"Unit: {monthly_consumption.unit}")
+    # Process and display the data
+    print(f"Retrieved {len(aggregated_data.aggregated_time_series)} monthly measurements")
+    print(f"Unit: {aggregated_data.unit}")
 
-        # Display all monthly aggregations
-        if monthly_consumption.aggregated_time_series:
-            print("\nMonthly consumption:")
-            for item in monthly_consumption.aggregated_time_series:
-                print(
-                    f"Period: {item.started_at.strftime('%Y-%m')} to {item.ended_at.strftime('%Y-%m')}, "
-                    f"Value: {item.value} {monthly_consumption.unit}, Calculated: {item.calculated}"
-                )
-
-    except Exception as e:
-        logger.error(f"Error: {e}", exc_info=True)
+    # Display all measurements
+    if aggregated_data.aggregated_time_series:
+        print("\nMonthly measurements:")
+        for item in aggregated_data.aggregated_time_series:
+            print(
+                f"Period: {item.started_at.strftime('%Y-%m')}, "
+                f"Value: {item.value} {aggregated_data.unit}, "
+                f"Calculated: {item.calculated}"
+            )
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

@@ -10,7 +10,8 @@ import logging
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
-import requests
+import aiohttp
+from aiohttp import ClientTimeout
 
 from .exceptions import ForbiddenException, UnauthorizedException
 from .models import (
@@ -27,8 +28,15 @@ class LenedaClient:
     """Client for the Leneda API."""
 
     BASE_URL = "https://api.leneda.lu/api"
+    DEFAULT_TIMEOUT = ClientTimeout(total=30)  # 30 seconds total timeout
 
-    def __init__(self, api_key: str, energy_id: str, debug: bool = False):
+    def __init__(
+        self,
+        api_key: str,
+        energy_id: str,
+        debug: bool = False,
+        timeout: Optional[ClientTimeout] = None,
+    ):
         """
         Initialize the Leneda API client.
 
@@ -36,9 +44,11 @@ class LenedaClient:
             api_key: Your Leneda API key
             energy_id: Your Energy ID
             debug: Enable debug logging
+            timeout: Optional timeout settings for requests
         """
         self.api_key = api_key
         self.energy_id = energy_id
+        self.timeout = timeout or self.DEFAULT_TIMEOUT
 
         # Set up headers for API requests
         self.headers = {
@@ -53,7 +63,7 @@ class LenedaClient:
             logger.setLevel(logging.DEBUG)
             logger.debug("Debug logging enabled for Leneda client")
 
-    def _make_request(
+    async def _make_request(
         self,
         method: str,
         endpoint: str,
@@ -75,7 +85,7 @@ class LenedaClient:
         Raises:
             UnauthorizedException: If the API returns a 401 status code
             ForbiddenException: If the API returns a 403 status code
-            requests.exceptions.RequestException: For other request errors
+            aiohttp.ClientError: For other request errors
             json.JSONDecodeError: If the response cannot be parsed as JSON
         """
         url = f"{self.BASE_URL}/{endpoint}"
@@ -88,52 +98,42 @@ class LenedaClient:
             logger.debug(f"Request data: {json.dumps(json_data, indent=2)}")
 
         try:
-            # Make the request
-            response = requests.request(
-                method=method, url=url, headers=self.headers, params=params, json=json_data
-            )
+            async with aiohttp.ClientSession(timeout=self.timeout) as session:
+                async with session.request(
+                    method=method, url=url, headers=self.headers, params=params, json=json_data
+                ) as response:
+                    # Check for HTTP errors
+                    if response.status == 401:
+                        raise UnauthorizedException(
+                            "API authentication failed. Please check your API key and energy ID."
+                        )
+                    if response.status == 403:
+                        raise ForbiddenException(
+                            "Access forbidden. This may be due to Leneda's geoblocking or other access restrictions."
+                        )
+                    response.raise_for_status()
 
-            # Check for HTTP errors
-            if response.status_code == 401:
-                raise UnauthorizedException(
-                    "API authentication failed. Please check your API key and energy ID."
-                )
-            if response.status_code == 403:
-                raise ForbiddenException(
-                    "Access forbidden. This may be due to Leneda's geoblocking or other access restrictions."
-                )
-            response.raise_for_status()
+                    # Parse the response
+                    if response.content:
+                        response_data = await response.json()
+                        logger.debug(f"Response status: {response.status}")
+                        logger.debug(f"Response data: {json.dumps(response_data, indent=2)}")
+                        return response_data
+                    else:
+                        logger.debug(f"Response status: {response.status} (no content)")
+                        return {}
 
-            # Parse the response
-            if response.content:
-                response_data = response.json()
-                logger.debug(f"Response status: {response.status_code}")
-                logger.debug(f"Response data: {json.dumps(response_data, indent=2)}")
-                return response_data
-            else:
-                logger.debug(f"Response status: {response.status_code} (no content)")
-                return {}
-
-        except requests.exceptions.HTTPError as e:
+        except aiohttp.ClientError as e:
             # Handle HTTP errors
             logger.error(f"HTTP error: {e}")
-            if hasattr(e, "response") and e.response is not None:
-                logger.error(f"Response status: {e.response.status_code}")
-                logger.error(f"Response body: {e.response.text}")
-            raise
-
-        except requests.exceptions.RequestException as e:
-            # Handle other request errors
-            logger.error(f"Request error: {e}")
             raise
 
         except json.JSONDecodeError as e:
             # Handle JSON parsing errors
             logger.error(f"JSON decode error: {e}")
-            logger.error(f"Response text: {response.text}")
             raise
 
-    def get_metering_data(
+    async def get_metering_data(
         self,
         metering_point_code: str,
         obis_code: ObisCode,
@@ -167,12 +167,12 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = self._make_request(method="GET", endpoint=endpoint, params=params)
+        response_data = await self._make_request(method="GET", endpoint=endpoint, params=params)
 
         # Parse the response into a MeteringData object
         return MeteringData.from_dict(response_data)
 
-    def get_aggregated_metering_data(
+    async def get_aggregated_metering_data(
         self,
         metering_point_code: str,
         obis_code: ObisCode,
@@ -212,12 +212,12 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = self._make_request(method="GET", endpoint=endpoint, params=params)
+        response_data = await self._make_request(method="GET", endpoint=endpoint, params=params)
 
         # Parse the response into an AggregatedMeteringData object
         return AggregatedMeteringData.from_dict(response_data)
 
-    def request_metering_data_access(
+    async def request_metering_data_access(
         self,
         from_energy_id: str,
         from_name: str,
@@ -246,11 +246,13 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = self._make_request(method="POST", endpoint=endpoint, json_data=data)
+        response_data = await self._make_request(method="POST", endpoint=endpoint, json_data=data)
 
         return response_data
 
-    def probe_metering_point_obis_code(self, metering_point_code: str, obis_code: ObisCode) -> bool:
+    async def probe_metering_point_obis_code(
+        self, metering_point_code: str, obis_code: ObisCode
+    ) -> bool:
         """
         Probe if a metering point provides data for a specific OBIS code.
 
@@ -272,14 +274,14 @@ class LenedaClient:
         Raises:
             UnauthorizedException: If the API returns a 401 status code
             ForbiddenException: If the API returns a 403 status code
-            requests.exceptions.RequestException: For other request errors
+            aiohttp.ClientError: For other request errors
         """
         # Use arbitrary time window
         end_date = datetime.now()
         start_date = end_date - timedelta(weeks=4)
 
         # Try to get aggregated data for the specified OBIS code
-        result = self.get_aggregated_metering_data(
+        result = await self.get_aggregated_metering_data(
             metering_point_code=metering_point_code,
             obis_code=obis_code,
             start_date=start_date,
@@ -291,7 +293,7 @@ class LenedaClient:
         # Return True if we got data (unit is not None), False otherwise
         return result.unit is not None
 
-    def get_supported_obis_codes(self, metering_point_code: str) -> List[ObisCode]:
+    async def get_supported_obis_codes(self, metering_point_code: str) -> List[ObisCode]:
         """
         Get all OBIS codes that are supported by a given metering point.
 
@@ -311,10 +313,10 @@ class LenedaClient:
         Raises:
             UnauthorizedException: If the API returns a 401 status code
             ForbiddenException: If the API returns a 403 status code
-            requests.exceptions.RequestException: For other request errors
+            aiohttp.ClientError: For other request errors
         """
-        return [
-            obis_code
-            for obis_code in ObisCode
-            if self.probe_metering_point_obis_code(metering_point_code, obis_code)
-        ]
+        supported_codes = []
+        for obis_code in ObisCode:
+            if await self.probe_metering_point_obis_code(metering_point_code, obis_code):
+                supported_codes.append(obis_code)
+        return supported_codes
