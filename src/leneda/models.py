@@ -8,6 +8,7 @@ making it easier to work with the data in a type-safe manner.
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
+from enum import Enum
 from typing import Any, Dict, List
 
 from dateutil import parser
@@ -237,3 +238,11 @@ class AggregatedMeteringData:
             f"AggregatedMeteringData(unit={self.unit}, "
             f"items_count={len(self.aggregated_time_series)})"
         )
+
+
+class AuthenticationProbeResult(Enum):
+    """Result of an authentication probe."""
+
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+    UNKNOWN = "UNKNOWN"

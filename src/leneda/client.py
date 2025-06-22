@@ -11,11 +11,12 @@ from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional, Union
 
 import aiohttp
-from aiohttp import ClientTimeout
+from aiohttp import ClientResponseError, ClientTimeout
 
 from .exceptions import ForbiddenException, UnauthorizedException
 from .models import (
     AggregatedMeteringData,
+    AuthenticationProbeResult,
     MeteringData,
 )
 from .obis_codes import ObisCode
@@ -320,3 +321,41 @@ class LenedaClient:
             if await self.probe_metering_point_obis_code(metering_point_code, obis_code):
                 supported_codes.append(obis_code)
         return supported_codes
+
+    async def probe_credentials(self) -> AuthenticationProbeResult:
+        """
+        Probe if credentials are valid.
+
+        NOTE: This is an experimental function, as the Leneda API does not provide a native way to verify credentials only.
+        Use with caution, may break or yield unexpected results.
+
+        This method attempts to verify authentication by making a request to the metering data access endpoint
+        with invalid parameters. If the API returns a 400 status code, it indicates that authentication is successful
+        but the request parameters are invalid. If it returns a 401 status code, authentication has failed.
+
+        We make a request with invalid parameters because we don't want to actually lodge a metering data access request,
+        we just want to verify that the credentials are valid.
+
+        Returns:
+            AuthenticationProbeResult: SUCCESS if authentication is valid, FAILURE if authentication failed,
+            or UNKNOWN if the result cannot be determined
+
+        Raises:
+            ForbiddenException: If the API returns a 403 status code
+        """
+        try:
+            await self.request_metering_data_access("", "", [], [])
+        except UnauthorizedException:
+            return AuthenticationProbeResult.FAILURE
+        except ClientResponseError as e:
+            # We expect a 400 response if authentication is successful and our request is invalid
+            if e.status == 400:
+                # Update the config entry with new token
+                return AuthenticationProbeResult.SUCCESS
+            return AuthenticationProbeResult.UNKNOWN
+        except ForbiddenException:
+            raise
+        except Exception:
+            return AuthenticationProbeResult.UNKNOWN
+
+        return AuthenticationProbeResult.UNKNOWN

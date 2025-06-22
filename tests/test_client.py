@@ -6,10 +6,11 @@ import json
 import os
 import sys
 import unittest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
+from aiohttp import ClientResponseError
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -22,6 +23,7 @@ from src.leneda.exceptions import (
 from src.leneda.models import (
     AggregatedMeteringData,
     AggregatedMeteringValue,
+    AuthenticationProbeResult,
     MeteringData,
     MeteringValue,
 )
@@ -358,6 +360,120 @@ class TestLenedaClient:
 
         # Check that the probe was called for each OBIS code
         assert mock_probe.call_count == len(ObisCode)
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_probe_credentials_success(self, mock_request):
+        """Test probe_credentials with valid credentials (400 response expected)."""
+        # Set up the mock response with 400 status (expected for valid credentials with invalid request)
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            400, "Bad request"
+        )
+
+        # Call the method
+        result = await self.client.probe_credentials()
+
+        # Check the result
+        assert result == AuthenticationProbeResult.SUCCESS
+
+        # Check that the request was made correctly
+        mock_request.assert_called_once()
+        call_kwargs = mock_request.call_args[1]
+        assert call_kwargs["method"] == "POST"
+        assert call_kwargs["url"] == "https://api.leneda.lu/api/metering-data-access-request"
+        assert call_kwargs["headers"] == {
+            "X-API-KEY": "test_api_key",
+            "X-ENERGY-ID": "test_energy_id",
+            "Content-Type": "application/json",
+        }
+        assert call_kwargs["json"] == {
+            "from": "",
+            "fromName": "",
+            "meteringPointCodes": [],
+            "obisCodes": [],
+        }
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_probe_credentials_unauthorized(self, mock_request):
+        """Test probe_credentials with invalid credentials (401 response)."""
+        # Set up the mock response with 401 status
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            401, "Unauthorized"
+        )
+
+        # Call the method
+        result = await self.client.probe_credentials()
+
+        # Check the result
+        assert result == AuthenticationProbeResult.FAILURE
+
+        # Check that the request was made correctly
+        mock_request.assert_called_once()
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_probe_credentials_forbidden(self, mock_request):
+        """Test probe_credentials with forbidden access (403 response)."""
+        # Set up the mock response with 403 status
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            403, "Forbidden"
+        )
+
+        # Call the method and check that it raises ForbiddenException
+        with pytest.raises(ForbiddenException):
+            await self.client.probe_credentials()
+
+        # Check that the request was made correctly
+        mock_request.assert_called_once()
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_probe_credentials_unknown_response(self, mock_request):
+        """Test probe_credentials with unexpected response (500 response)."""
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            500, "Internal server error"
+        )
+
+        # Call the method
+        result = await self.client.probe_credentials()
+
+        # Check the result
+        assert result == AuthenticationProbeResult.UNKNOWN
+
+        # Check that the request was made correctly
+        mock_request.assert_called_once()
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_probe_credentials_network_error(self, mock_request):
+        """Test probe_credentials with network error."""
+        # Set up the mock to raise a network error
+        mock_request.side_effect = aiohttp.ClientError("Network error")
+
+        # Call the method
+        result = await self.client.probe_credentials()
+
+        # Check the result
+        assert result == AuthenticationProbeResult.UNKNOWN
+
+        # Check that the request was attempted
+        mock_request.assert_called_once()
+
+
+def build_error_mock_response(status: int, message: str) -> AsyncMock:
+    """Build a mock response for an error case."""
+
+    def raise_for_status():
+        raise ClientResponseError(
+            status=status,
+            history=(),
+            message=message,
+            headers=None,
+            request_info=MagicMock(),
+        )
+
+    mock_response = AsyncMock()
+    mock_response.status = status
+    mock_response.content = message
+    mock_response.raise_for_status = raise_for_status
+
+    return mock_response
 
 
 if __name__ == "__main__":
