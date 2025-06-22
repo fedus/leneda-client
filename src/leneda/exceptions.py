@@ -19,3 +19,9 @@ class ForbiddenException(LenedaException):
     """Raised when access is forbidden (403 Forbidden), typically due to geoblocking or other access restrictions."""
 
     pass
+
+
+class MeteringPointNotFoundException(LenedaException):
+    """Raised when a metering point is not found."""
+
+    pass

@@ -35,6 +35,8 @@ setup(
     url="https://github.com/fedus/leneda-client",
     package_dir={"": "src"},
     packages=find_packages(where="src"),
+    include_package_data=True,
+    package_data={"leneda": ["py.typed"]},
     install_requires=requirements,
     classifiers=[
         "Development Status :: 4 - Beta",

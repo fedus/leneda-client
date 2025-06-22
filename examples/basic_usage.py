@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger("leneda_example")
 
 
-def parse_arguments():
+def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(description="Leneda API Client Basic Usage Example")
 
@@ -59,7 +59,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def get_credentials(args):
+def get_credentials(args: argparse.Namespace) -> tuple[str, str]:
     """Get API credentials from arguments or environment variables."""
     api_key = args.api_key or os.environ.get("LENEDA_API_KEY")
     energy_id = args.energy_id or os.environ.get("LENEDA_ENERGY_ID")
@@ -79,7 +79,7 @@ def get_credentials(args):
     return api_key, energy_id
 
 
-async def main():
+async def main() -> None:
     # Parse command-line arguments
     args = parse_arguments()
 
@@ -148,11 +148,11 @@ async def main():
     # Display all measurements
     if aggregated_data.aggregated_time_series:
         print("\nMonthly measurements:")
-        for item in aggregated_data.aggregated_time_series:
+        for metering_value in aggregated_data.aggregated_time_series:
             print(
-                f"Period: {item.started_at.strftime('%Y-%m')}, "
-                f"Value: {item.value} {aggregated_data.unit}, "
-                f"Calculated: {item.calculated}"
+                f"Period: {metering_value.started_at.strftime('%Y-%m')}, "
+                f"Value: {metering_value.value} {aggregated_data.unit}, "
+                f"Calculated: {metering_value.calculated}"
             )
 
 

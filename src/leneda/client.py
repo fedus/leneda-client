@@ -8,12 +8,12 @@ energy consumption and production data for electricity and gas.
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
 
 import aiohttp
 from aiohttp import ClientResponseError, ClientTimeout
 
-from .exceptions import ForbiddenException, UnauthorizedException
+from .exceptions import ForbiddenException, MeteringPointNotFoundException, UnauthorizedException
 from .models import (
     AggregatedMeteringData,
     AuthenticationProbeResult,
@@ -116,7 +116,7 @@ class LenedaClient:
 
                     # Parse the response
                     if response.content:
-                        response_data = await response.json()
+                        response_data: dict = await response.json()
                         logger.debug(f"Response status: {response.status}")
                         logger.debug(f"Response data: {json.dumps(response_data, indent=2)}")
                         return response_data
@@ -132,6 +132,39 @@ class LenedaClient:
         except json.JSONDecodeError as e:
             # Handle JSON parsing errors
             logger.error(f"JSON decode error: {e}")
+            raise
+
+    async def _make_metering_request(
+        self, request_callable: Callable[..., Awaitable[dict[Any, Any]]], *args: Any, **kwargs: Any
+    ) -> dict[Any, Any]:
+        """
+        Make a request to a metering data endpoint with 404 error handling.
+
+        This wrapper around any request callable specifically handles 404 errors for metering data
+        endpoints by raising MeteringPointNotFoundException.
+
+        Args:
+            request_callable: The callable to execute (e.g., self._make_request)
+            *args: Arguments to pass to the callable
+            **kwargs: Keyword arguments to pass to the callable
+
+        Returns:
+            The JSON response from the API
+
+        Raises:
+            MeteringPointNotFoundException: If the API returns a 404 status code
+            UnauthorizedException: If the API returns a 401 status code
+            ForbiddenException: If the API returns a 403 status code
+            aiohttp.ClientError: For other request errors
+            json.JSONDecodeError: If the response cannot be parsed as JSON
+        """
+        try:
+            return await request_callable(*args, **kwargs)
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                raise MeteringPointNotFoundException(
+                    "Metering point not found. The requested metering point may not exist or you may not have access to it."
+                )
             raise
 
     async def get_metering_data(
@@ -168,7 +201,9 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = await self._make_request(method="GET", endpoint=endpoint, params=params)
+        response_data = await self._make_metering_request(
+            self._make_request, method="GET", endpoint=endpoint, params=params
+        )
 
         # Parse the response into a MeteringData object
         return MeteringData.from_dict(response_data)
@@ -213,7 +248,9 @@ class LenedaClient:
         }
 
         # Make the request
-        response_data = await self._make_request(method="GET", endpoint=endpoint, params=params)
+        response_data = await self._make_metering_request(
+            self._make_request, method="GET", endpoint=endpoint, params=params
+        )
 
         # Parse the response into an AggregatedMeteringData object
         return AggregatedMeteringData.from_dict(response_data)

@@ -3,21 +3,18 @@ Tests for the Leneda API client.
 """
 
 import json
-import os
-import sys
 import unittest
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
 from aiohttp import ClientResponseError
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
 from src.leneda import LenedaClient
 from src.leneda.exceptions import (
     ForbiddenException,
+    MeteringPointNotFoundException,
     UnauthorizedException,
 )
 from src.leneda.models import (
@@ -35,7 +32,7 @@ class TestLenedaClient:
     """Test cases for the LenedaClient class."""
 
     @pytest.fixture(autouse=True)
-    def setup(self):
+    def setup(self) -> None:
         """Set up test fixtures."""
         self.api_key = "test_api_key"
         self.energy_id = "test_energy_id"
@@ -84,7 +81,7 @@ class TestLenedaClient:
         }
 
     @patch("aiohttp.ClientSession.request")
-    async def test_get_time_series(self, mock_request):
+    async def test_get_time_series(self, mock_request: Any) -> None:
         """Test getting time series data."""
         # Set up the mock response
         mock_response = AsyncMock()
@@ -133,7 +130,7 @@ class TestLenedaClient:
         }
 
     @patch("aiohttp.ClientSession.request")
-    async def test_get_aggregated_time_series(self, mock_request):
+    async def test_get_aggregated_time_series(self, mock_request: Any) -> None:
         """Test getting aggregated time series data."""
         # Set up the mock response
         mock_response = AsyncMock()
@@ -185,7 +182,7 @@ class TestLenedaClient:
         }
 
     @patch("aiohttp.ClientSession.request")
-    async def test_request_metering_data_access(self, mock_request):
+    async def test_request_metering_data_access(self, mock_request: Any) -> None:
         """Test requesting metering data access."""
         # Set up the mock response
         mock_response = AsyncMock()
@@ -226,14 +223,12 @@ class TestLenedaClient:
         }
 
     @patch("aiohttp.ClientSession.request")
-    async def test_unauthorized_error(self, mock_request):
+    async def test_unauthorized_error(self, mock_request: Any) -> None:
         """Test handling of 401 Unauthorized errors."""
         # Set up the mock response with 401 status
-        mock_response = AsyncMock()
-        mock_response.status = 401
-        mock_response.content = b"Unauthorized"
-        mock_response.raise_for_status = lambda: None
-        mock_request.return_value.__aenter__.return_value = mock_response
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            401, "Unauthorized"
+        )
 
         # Call the method and check that it raises UnauthorizedException
         with pytest.raises(UnauthorizedException) as exc_info:
@@ -248,14 +243,12 @@ class TestLenedaClient:
         assert "API authentication failed" in str(exc_info.value)
 
     @patch("aiohttp.ClientSession.request")
-    async def test_forbidden_error(self, mock_request):
+    async def test_forbidden_error(self, mock_request: Any) -> None:
         """Test handling of 403 Forbidden errors."""
         # Set up the mock response with 403 status
-        mock_response = AsyncMock()
-        mock_response.status = 403
-        mock_response.content = b"Forbidden"
-        mock_response.raise_for_status = lambda: None
-        mock_request.return_value.__aenter__.return_value = mock_response
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            403, "Forbidden"
+        )
 
         # Call the method and check that it raises ForbiddenException
         with pytest.raises(ForbiddenException) as exc_info:
@@ -270,13 +263,15 @@ class TestLenedaClient:
         assert "geoblocking" in str(exc_info.value)
 
     @patch("aiohttp.ClientSession.request")
-    async def test_error_handling(self, mock_request):
-        """Test error handling for other HTTP errors."""
+    async def test_metering_point_not_found_handling(self, mock_request: Any) -> None:
+        """Test error handling when a metering point is not found."""
         # Set up the mock response to raise an exception
-        mock_request.side_effect = aiohttp.ClientError("404 Client Error")
+        mock_request.return_value.__aenter__.return_value = build_error_mock_response(
+            404, "Not found"
+        )
 
         # Call the method and check that it raises an exception
-        with pytest.raises(aiohttp.ClientError):
+        with pytest.raises(MeteringPointNotFoundException):
             await self.client.get_metering_data(
                 "LU-METERING_POINT1",
                 ObisCode.ELEC_CONSUMPTION_ACTIVE,
@@ -285,7 +280,7 @@ class TestLenedaClient:
             )
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_metering_point_obis_code_valid(self, mock_request):
+    async def test_probe_metering_point_obis_code_valid(self, mock_request: Any) -> None:
         """Test probe_metering_point_obis_code with a valid metering point and OBIS code."""
         # Set up the mock response with valid data
         mock_response = AsyncMock()
@@ -306,7 +301,7 @@ class TestLenedaClient:
         mock_request.assert_called_once()
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_metering_point_obis_code_invalid(self, mock_request):
+    async def test_probe_metering_point_obis_code_invalid(self, mock_request: Any) -> None:
         """Test probe_metering_point_obis_code with an invalid metering point or unsupported OBIS code."""
         # Set up the mock response with null unit
         mock_response = AsyncMock()
@@ -327,11 +322,11 @@ class TestLenedaClient:
         mock_request.assert_called_once()
 
     @patch.object(LenedaClient, "probe_metering_point_obis_code")
-    async def test_get_supported_obis_codes(self, mock_probe):
+    async def test_get_supported_obis_codes(self, mock_probe: Any) -> None:
         """Test getting supported OBIS codes for a metering point."""
 
         # Mock probe_metering_point_obis_code to return True for two codes, False otherwise
-        def side_effect(metering_point_code, obis_code):
+        def side_effect(metering_point_code: str, obis_code: ObisCode) -> bool:
             return obis_code in [ObisCode.ELEC_CONSUMPTION_ACTIVE, ObisCode.ELEC_PRODUCTION_ACTIVE]
 
         mock_probe.side_effect = side_effect
@@ -349,7 +344,7 @@ class TestLenedaClient:
         assert mock_probe.call_count == len(ObisCode)
 
     @patch.object(LenedaClient, "probe_metering_point_obis_code", return_value=False)
-    async def test_get_supported_obis_codes_none(self, mock_probe):
+    async def test_get_supported_obis_codes_none(self, mock_probe: Any) -> None:
         """Test getting supported OBIS codes when none are supported."""
         # Call the method
         result = await self.client.get_supported_obis_codes("INVALID-METERING-POINT")
@@ -362,7 +357,7 @@ class TestLenedaClient:
         assert mock_probe.call_count == len(ObisCode)
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_credentials_success(self, mock_request):
+    async def test_probe_credentials_success(self, mock_request: Any) -> None:
         """Test probe_credentials with valid credentials (400 response expected)."""
         # Set up the mock response with 400 status (expected for valid credentials with invalid request)
         mock_request.return_value.__aenter__.return_value = build_error_mock_response(
@@ -393,7 +388,7 @@ class TestLenedaClient:
         }
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_credentials_unauthorized(self, mock_request):
+    async def test_probe_credentials_unauthorized(self, mock_request: Any) -> None:
         """Test probe_credentials with invalid credentials (401 response)."""
         # Set up the mock response with 401 status
         mock_request.return_value.__aenter__.return_value = build_error_mock_response(
@@ -410,7 +405,7 @@ class TestLenedaClient:
         mock_request.assert_called_once()
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_credentials_forbidden(self, mock_request):
+    async def test_probe_credentials_forbidden(self, mock_request: Any) -> None:
         """Test probe_credentials with forbidden access (403 response)."""
         # Set up the mock response with 403 status
         mock_request.return_value.__aenter__.return_value = build_error_mock_response(
@@ -425,7 +420,7 @@ class TestLenedaClient:
         mock_request.assert_called_once()
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_credentials_unknown_response(self, mock_request):
+    async def test_probe_credentials_unknown_response(self, mock_request: Any) -> None:
         """Test probe_credentials with unexpected response (500 response)."""
         mock_request.return_value.__aenter__.return_value = build_error_mock_response(
             500, "Internal server error"
@@ -441,7 +436,7 @@ class TestLenedaClient:
         mock_request.assert_called_once()
 
     @patch("aiohttp.ClientSession.request")
-    async def test_probe_credentials_network_error(self, mock_request):
+    async def test_probe_credentials_network_error(self, mock_request: Any) -> None:
         """Test probe_credentials with network error."""
         # Set up the mock to raise a network error
         mock_request.side_effect = aiohttp.ClientError("Network error")
@@ -459,7 +454,7 @@ class TestLenedaClient:
 def build_error_mock_response(status: int, message: str) -> AsyncMock:
     """Build a mock response for an error case."""
 
-    def raise_for_status():
+    def raise_for_status() -> None:
         raise ClientResponseError(
             status=status,
             history=(),
