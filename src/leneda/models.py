@@ -7,9 +7,9 @@ making it easier to work with the data in a type-safe manner.
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from dateutil import parser
 
@@ -246,3 +246,98 @@ class AuthenticationProbeResult(Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
     UNKNOWN = "UNKNOWN"
+
+
+@dataclass
+class SharingGroup:
+    """A sharing group returned by the Leneda API."""
+
+    id: str
+    contract_number: str
+    type: str
+    owner_energy_id: str
+    manager_energy_id: str
+    start_date: date
+    end_date: Optional[date] = None
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SharingGroup":
+        """Create a SharingGroup from a dictionary."""
+        try:
+            return cls(
+                id=data["id"],
+                contract_number=data["contractNumber"],
+                type=data["type"],
+                owner_energy_id=data["ownerEnergyId"],
+                manager_energy_id=data["managerEnergyId"],
+                start_date=date.fromisoformat(data["startDate"]),
+                end_date=(date.fromisoformat(data["endDate"]) if data.get("endDate") else None),
+            )
+        except KeyError as e:
+            logger.error(f"Missing key in sharing group API response: {e}")
+            logger.debug(f"API response data: {data}")
+            raise
+        except Exception as e:
+            logger.error(f"Error parsing sharing group: {e}")
+            logger.debug(f"API response data: {data}")
+            raise
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the SharingGroup to a dictionary."""
+        return {
+            "id": self.id,
+            "contractNumber": self.contract_number,
+            "type": self.type,
+            "ownerEnergyId": self.owner_energy_id,
+            "managerEnergyId": self.manager_energy_id,
+            "startDate": self.start_date.isoformat(),
+            "endDate": self.end_date.isoformat() if self.end_date else None,
+        }
+
+
+@dataclass
+class SharingGroupsPage:
+    """Paginated sharing groups response."""
+
+    content: List[SharingGroup] = field(default_factory=list)
+    has_next_page: bool = False
+    number: int = 1
+    size: int = 10
+    total_elements: int = 0
+    total_pages: int = 0
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "SharingGroupsPage":
+        """Create a SharingGroupsPage from a dictionary."""
+        try:
+            groups = []
+            for item_data in data.get("content", []):
+                try:
+                    groups.append(SharingGroup.from_dict(item_data))
+                except Exception as e:
+                    logger.warning(f"Skipping invalid sharing group: {e}")
+                    logger.debug(f"Invalid sharing group data: {item_data}")
+
+            return cls(
+                content=groups,
+                has_next_page=bool(data.get("hasNextPage", False)),
+                number=int(data.get("number", 1)),
+                size=int(data.get("size", 10)),
+                total_elements=int(data.get("totalElements", len(groups))),
+                total_pages=int(data.get("totalPages", 1)),
+            )
+        except Exception as e:
+            logger.error(f"Error creating SharingGroupsPage: {e}")
+            logger.debug(f"API response data: {data}")
+            raise
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert the SharingGroupsPage to a dictionary."""
+        return {
+            "content": [group.to_dict() for group in self.content],
+            "hasNextPage": self.has_next_page,
+            "number": self.number,
+            "size": self.size,
+            "totalElements": self.total_elements,
+            "totalPages": self.total_pages,
+        }

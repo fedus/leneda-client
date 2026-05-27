@@ -14,6 +14,8 @@ from .models import (
     AggregatedMeteringValue,
     MeteringData,
     MeteringValue,
+    SharingGroup,
+    SharingGroupsPage,
 )
 
 # Import the OBIS code constants
@@ -30,5 +32,7 @@ __all__ = [
     "MeteringData",
     "AggregatedMeteringValue",
     "AggregatedMeteringData",
+    "SharingGroup",
+    "SharingGroupsPage",
     "__version__",
 ]
