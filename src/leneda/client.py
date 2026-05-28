@@ -7,7 +7,7 @@ energy consumption and production data for electricity and gas.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Union
 
 import aiohttp
@@ -441,6 +441,9 @@ class LenedaClient:
             endpoint="sharing-groups-small",
             params=params,
         )
+        from pprint import pprint
+
+        pprint(response_data)
 
         return SharingGroupsPage.from_dict(response_data)
 
@@ -481,3 +484,58 @@ class LenedaClient:
             page += 1
 
         return groups
+
+    async def get_sharing_group_metering_points(
+        self,
+        contract_number: str,
+        on_date: Optional[Union[str, date, datetime]] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Get all metering points belonging to a sharing group for a given date.
+
+        Args:
+            contract_number: The contract number of the sharing group,
+                for example "CR00007479".
+            on_date: Date for which to retrieve the metering points.
+                If omitted, today's date is used.
+                Can be a date, datetime, or ISO date string.
+
+        Returns:
+            A list of metering point dictionaries as returned by the Leneda API.
+
+        Raises:
+            UnauthorizedException: If the API returns a 401 status code
+            ForbiddenException: If the API returns a 403 status code
+            aiohttp.ClientError: For other request errors
+            json.JSONDecodeError: If the response cannot be parsed as JSON
+        """
+        if on_date is None:
+            date_value = date.today().isoformat()
+        elif isinstance(on_date, datetime):
+            date_value = on_date.date().isoformat()
+        elif isinstance(on_date, date):
+            date_value = on_date.isoformat()
+        else:
+            date_value = on_date
+
+        endpoint = f"sharing-groups/{contract_number}/metering-points"
+
+        response_data = await self._make_request(
+            method="GET",
+            endpoint=endpoint,
+            params={"date": date_value},
+        )
+
+        if isinstance(response_data, list):
+            return response_data
+
+        if isinstance(response_data, dict):
+            if "content" in response_data and isinstance(response_data["content"], list):
+                return response_data["content"]
+
+            if "meteringPoints" in response_data and isinstance(
+                response_data["meteringPoints"], list
+            ):
+                return response_data["meteringPoints"]
+
+        return []

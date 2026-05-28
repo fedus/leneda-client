@@ -53,3 +53,42 @@ Period: 2025-01 to 2025-02, Value: 148.985 kWh, Calculated: False
 Period: 2025-02 to 2025-03, Value: 44.619 kWh, Calculated: False
 Period: 2025-03 to 2025-04, Value: 29.662 kWh, Calculated: False
 ```
+
+### Listing metering points for a sharing group
+
+You can retrieve the metering points belonging to a sharing group for a given date.
+
+The Leneda API expects the sharing group contract number, for example
+`CR00007479`.
+
+If no date is provided, the client uses today's date.
+
+```python
+import asyncio
+import os
+from datetime import date
+
+from leneda import LenedaClient
+
+
+async def main() -> None:
+    client = LenedaClient(
+        api_key=os.environ["LENEDA_API_KEY"],
+        energy_id=os.environ["LENEDA_ENERGY_ID"],
+    )
+
+    groups = await client.list_sharing_groups()
+
+    for group in groups:
+        print(f"{group.contract_number} | {group.type}")
+
+        metering_points = await client.get_sharing_group_metering_points(
+            group.contract_number,
+            on_date=date.today(),
+        )
+
+        for metering_point in metering_points:
+            print(f"  {metering_point}")
+
+
+asyncio.run(main())

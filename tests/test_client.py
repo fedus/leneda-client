@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
+from datetime import date
 from aiohttp import ClientResponseError
 
 from src.leneda import LenedaClient
@@ -615,6 +616,82 @@ class TestLenedaClient:
         assert result[1].id == "group-2"
 
         assert mock_request.call_count == 2
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_get_sharing_group_metering_points(self, mock_request: Any) -> None:
+        """Test getting metering points for a sharing group."""
+        contract_number = "CR00007479"
+
+        sample_metering_points = [
+            {
+                "code": "LU0000012345678901234000000000000",
+                "type": "CONSUMPTION",
+            },
+            {
+                "code": "LU0000098765432109876000000000000",
+                "type": "PRODUCTION",
+            },
+        ]
+
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value=sample_metering_points)
+        mock_response.content = json.dumps(sample_metering_points).encode()
+        mock_response.raise_for_status = lambda: None
+        mock_request.return_value.__aenter__.return_value = mock_response
+
+        result = await self.client.get_sharing_group_metering_points(
+            contract_number,
+            on_date=date(2026, 5, 22),
+        )
+
+        assert isinstance(result, list)
+        assert len(result) == 2
+        assert result[0]["code"] == "LU0000012345678901234000000000000"
+        assert result[1]["code"] == "LU0000098765432109876000000000000"
+
+        mock_request.assert_called_once()
+        call_kwargs = mock_request.call_args[1]
+
+        assert call_kwargs["method"] == "GET"
+        assert (
+            call_kwargs["url"] == "https://api.leneda.lu/api/"
+            "sharing-groups/CR00007479/metering-points"
+        )
+        assert call_kwargs["headers"] == {
+            "X-API-KEY": "test_api_key",
+            "X-ENERGY-ID": "test_energy_id",
+            "Content-Type": "application/json",
+        }
+        assert call_kwargs["params"] == {
+            "date": "2026-05-22",
+        }
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_get_sharing_group_metering_points_defaults_to_today(
+        self,
+        mock_request: Any,
+    ) -> None:
+        """Test that sharing group metering points defaults to today's date."""
+        contract_number = "CR00007479"
+
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value=[])
+        mock_response.content = json.dumps([]).encode()
+        mock_response.raise_for_status = lambda: None
+        mock_request.return_value.__aenter__.return_value = mock_response
+
+        await self.client.get_sharing_group_metering_points(contract_number)
+
+        call_kwargs = mock_request.call_args[1]
+
+        assert call_kwargs["url"] == (
+            "https://api.leneda.lu/api/sharing-groups/" "CR00007479/metering-points"
+        )
+        assert call_kwargs["params"] == {
+            "date": date.today().isoformat(),
+        }
 
 
 def build_error_mock_response(status: int, message: str) -> AsyncMock:
