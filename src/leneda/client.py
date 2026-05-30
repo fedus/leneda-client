@@ -8,21 +8,28 @@ energy consumption and production data for electricity and gas.
 import json
 import logging
 from datetime import datetime, timedelta
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Union
+from typing import Any, Awaitable, Callable, Dict, List, Literal, Optional, Union
 
 import aiohttp
 from aiohttp import ClientResponseError, ClientTimeout
 
-from .exceptions import ForbiddenException, MeteringPointNotFoundException, UnauthorizedException
+from .exceptions import (
+    ForbiddenException,
+    MeteringPointNotFoundException,
+    UnauthorizedException,
+)
 from .models import (
     AggregatedMeteringData,
     AuthenticationProbeResult,
     MeteringData,
+    SharingGroupsPage,
 )
 from .obis_codes import ObisCode
 
 # Set up logging
 logger = logging.getLogger("leneda.client")
+
+SharingGroupType = Literal["AIR", "AIN", "ACR", "AC1", "CEL", "APS", "CER", "CEN"]
 
 
 class LenedaClient:
@@ -396,3 +403,81 @@ class LenedaClient:
             return AuthenticationProbeResult.UNKNOWN
 
         return AuthenticationProbeResult.UNKNOWN
+
+    async def get_sharing_groups(
+        self,
+        page: int = 1,
+        size: int = 10,
+        type: Optional[SharingGroupType] = None,
+    ) -> SharingGroupsPage:
+        """
+        Get a paginated list of sharing groups available to the authenticated Energy ID.
+
+        Args:
+            page: Page number to retrieve. Leneda uses 1-based pagination.
+            size: Number of items per page.
+            type: Optional sharing group type filter.
+                Supported values: AIR, AIN, ACR, AC1, CEL, APS, CER, CEN.
+
+        Returns:
+            SharingGroupsPage containing the paginated sharing groups response.
+
+        Raises:
+            UnauthorizedException: If the API returns a 401 status code
+            ForbiddenException: If the API returns a 403 status code
+            aiohttp.ClientError: For other request errors
+            json.JSONDecodeError: If the response cannot be parsed as JSON
+        """
+        params: Dict[str, Any] = {
+            "page": page,
+            "size": size,
+        }
+
+        if type is not None:
+            params["type"] = type
+
+        response_data = await self._make_request(
+            method="GET",
+            endpoint="sharing-groups-small",
+            params=params,
+        )
+
+        return SharingGroupsPage.from_dict(response_data)
+
+    async def list_sharing_groups(
+        self,
+        type: Optional[SharingGroupType] = None,
+        size: int = 100,
+    ) -> List:
+        """
+        Get all sharing groups available to the authenticated Energy ID.
+
+        This method follows Leneda pagination automatically until there are no
+        more pages.
+
+        Args:
+            type: Optional sharing group type filter.
+                Supported values: AIR, AIN, ACR, AC1, CEL, APS, CER, CEN.
+            size: Number of items per page.
+
+        Returns:
+            A list of all SharingGroup objects.
+        """
+        page = 1
+        groups = []
+
+        while True:
+            result = await self.get_sharing_groups(
+                page=page,
+                size=size,
+                type=type,
+            )
+
+            groups.extend(result.content)
+
+            if not result.has_next_page:
+                break
+
+            page += 1
+
+        return groups

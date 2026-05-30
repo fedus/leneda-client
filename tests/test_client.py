@@ -23,6 +23,8 @@ from src.leneda.models import (
     AuthenticationProbeResult,
     MeteringData,
     MeteringValue,
+    SharingGroup,
+    SharingGroupsPage,
 )
 from src.leneda.obis_codes import ObisCode
 
@@ -78,6 +80,34 @@ class TestLenedaClient:
                     "calculated": False,
                 },
             ],
+        }
+
+        self.sample_sharing_groups = {
+            "content": [
+                {
+                    "id": "531e0bce-1fbd-4ba7-947f-212a5e62b438",
+                    "contractNumber": "CR00000001",
+                    "type": "AIR",
+                    "ownerEnergyId": "LUXE-MARIE-CAT42",
+                    "managerEnergyId": "LUXE-LE-ET-ECHO1",
+                    "startDate": "2021-11-01",
+                    "endDate": None,
+                },
+                {
+                    "id": "6def0402-cf29-42c2-a83a-7e7f6e8eb7d0",
+                    "contractNumber": "CR00000002",
+                    "type": "CEL",
+                    "ownerEnergyId": "LUXE-MARIE-CAT42",
+                    "managerEnergyId": "LUXE-LE-ET-ECHO1",
+                    "startDate": "2025-11-01",
+                    "endDate": None,
+                },
+            ],
+            "hasNextPage": False,
+            "number": 1,
+            "size": 10,
+            "totalElements": 2,
+            "totalPages": 1,
         }
 
     @patch("aiohttp.ClientSession.request")
@@ -449,6 +479,142 @@ class TestLenedaClient:
 
         # Check that the request was attempted
         mock_request.assert_called_once()
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_get_sharing_groups(self, mock_request: Any) -> None:
+        """Test getting paginated sharing groups."""
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value=self.sample_sharing_groups)
+        mock_response.content = json.dumps(self.sample_sharing_groups).encode()
+        mock_response.raise_for_status = lambda: None
+        mock_request.return_value.__aenter__.return_value = mock_response
+
+        result = await self.client.get_sharing_groups(page=1, size=10)
+
+        assert isinstance(result, SharingGroupsPage)
+        assert result.number == 1
+        assert result.size == 10
+        assert result.total_elements == 2
+        assert result.total_pages == 1
+        assert result.has_next_page is False
+        assert len(result.content) == 2
+
+        first_group = result.content[1]
+        assert isinstance(first_group, SharingGroup)
+        assert first_group.id == "6def0402-cf29-42c2-a83a-7e7f6e8eb7d0"
+        assert first_group.contract_number == "CR00000002"
+        assert first_group.type == "CEL"
+        assert first_group.owner_energy_id == "LUXE-MARIE-CAT42"
+        assert first_group.manager_energy_id == "LUXE-LE-ET-ECHO1"
+        assert first_group.start_date.isoformat() == "2025-11-01"
+        assert first_group.end_date is None
+
+        mock_request.assert_called_once()
+        call_kwargs = mock_request.call_args[1]
+
+        assert call_kwargs["method"] == "GET"
+        assert call_kwargs["url"] == "https://api.leneda.lu/api/sharing-groups-small"
+        assert call_kwargs["headers"] == {
+            "X-API-KEY": "test_api_key",
+            "X-ENERGY-ID": "test_energy_id",
+            "Content-Type": "application/json",
+        }
+        assert call_kwargs["params"] == {
+            "page": 1,
+            "size": 10,
+        }
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_get_sharing_groups_with_type_filter(self, mock_request: Any) -> None:
+        """Test getting sharing groups with a type filter."""
+        mock_response = AsyncMock()
+        mock_response.status = 200
+        mock_response.json = AsyncMock(return_value=self.sample_sharing_groups)
+        mock_response.content = json.dumps(self.sample_sharing_groups).encode()
+        mock_response.raise_for_status = lambda: None
+        mock_request.return_value.__aenter__.return_value = mock_response
+
+        result = await self.client.get_sharing_groups(page=1, size=10, type="CEL")
+
+        assert isinstance(result, SharingGroupsPage)
+
+        mock_request.assert_called_once()
+        call_kwargs = mock_request.call_args[1]
+
+        assert call_kwargs["method"] == "GET"
+        assert call_kwargs["url"] == "https://api.leneda.lu/api/sharing-groups-small"
+        assert call_kwargs["params"] == {
+            "page": 1,
+            "size": 10,
+            "type": "CEL",
+        }
+
+    @patch("aiohttp.ClientSession.request")
+    async def test_list_sharing_groups(self, mock_request: Any) -> None:
+        """Test listing all sharing groups across pages."""
+        first_page = {
+            "content": [
+                {
+                    "id": "group-1",
+                    "contractNumber": "CR00000001",
+                    "type": "AIR",
+                    "ownerEnergyId": "owner-1",
+                    "managerEnergyId": "manager-1",
+                    "startDate": "2024-01-01",
+                    "endDate": None,
+                }
+            ],
+            "hasNextPage": True,
+            "number": 1,
+            "size": 1,
+            "totalElements": 2,
+            "totalPages": 2,
+        }
+
+        second_page = {
+            "content": [
+                {
+                    "id": "group-2",
+                    "contractNumber": "CR00000002",
+                    "type": "CEL",
+                    "ownerEnergyId": "owner-2",
+                    "managerEnergyId": "manager-2",
+                    "startDate": "2024-02-01",
+                    "endDate": None,
+                }
+            ],
+            "hasNextPage": False,
+            "number": 2,
+            "size": 1,
+            "totalElements": 2,
+            "totalPages": 2,
+        }
+
+        first_response = AsyncMock()
+        first_response.status = 200
+        first_response.json = AsyncMock(return_value=first_page)
+        first_response.content = json.dumps(first_page).encode()
+        first_response.raise_for_status = lambda: None
+
+        second_response = AsyncMock()
+        second_response.status = 200
+        second_response.json = AsyncMock(return_value=second_page)
+        second_response.content = json.dumps(second_page).encode()
+        second_response.raise_for_status = lambda: None
+
+        mock_request.return_value.__aenter__.side_effect = [
+            first_response,
+            second_response,
+        ]
+
+        result = await self.client.list_sharing_groups(size=1)
+
+        assert len(result) == 2
+        assert result[0].id == "group-1"
+        assert result[1].id == "group-2"
+
+        assert mock_request.call_count == 2
 
 
 def build_error_mock_response(status: int, message: str) -> AsyncMock:
