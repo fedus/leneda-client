@@ -4,12 +4,12 @@ Tests for the Leneda API client.
 
 import json
 import unittest
+from datetime import date
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
-from datetime import date
 from aiohttp import ClientResponseError
 
 from src.leneda import LenedaClient
