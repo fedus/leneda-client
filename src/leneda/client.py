@@ -441,9 +441,6 @@ class LenedaClient:
             endpoint="sharing-groups-small",
             params=params,
         )
-        from pprint import pprint
-
-        pprint(response_data)
 
         return SharingGroupsPage.from_dict(response_data)
 
