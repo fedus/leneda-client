@@ -62,6 +62,15 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="Enable debug logging",
     )
+    parser.add_argument(
+        "--metering-points",
+        action="store_true",
+        help="Also list metering points for each sharing group",
+    )
+    parser.add_argument(
+        "--date",
+        help="Date for sharing group metering points, in YYYY-MM-DD format. Defaults to today.",
+    )
 
     return parser.parse_args()
 
@@ -128,6 +137,19 @@ async def main() -> None:
             for group in groups:
                 print_group(group)
 
+                if args.metering_points:
+                    metering_points = await client.get_sharing_group_metering_points(
+                        group.contract_number,
+                        on_date=args.date,
+                    )
+
+                    if not metering_points:
+                        print("  No metering points found.")
+                    else:
+                        print("  Metering points:")
+                        for metering_point in metering_points:
+                            print(f"    {metering_point}")
+
         else:
             page = await client.get_sharing_groups(
                 page=args.page,
@@ -148,6 +170,19 @@ async def main() -> None:
             print()
             for group in page.content:
                 print_group(group)
+
+                if args.metering_points:
+                    metering_points = await client.get_sharing_group_metering_points(
+                        group.contract_number,
+                        on_date=args.date,
+                    )
+
+                    if not metering_points:
+                        print("  No metering points found.")
+                    else:
+                        print("  Metering points:")
+                        for metering_point in metering_points:
+                            print(f"    {metering_point}")
 
     except Exception as exc:
         print(f"Error while retrieving sharing groups: {exc}")
